@@ -51,14 +51,16 @@ const { question, answer } = Astro.props;
 <style>
   .faq-item {
     background-color: var(--color-off-white);
-    border: 1px solid var(--color-warm-beige);
+    border: 2px solid var(--color-warm-beige);
     border-radius: var(--radius);
     overflow: hidden;
-    transition: box-shadow var(--duration-normal) var(--easing);
+    transition: all var(--duration-normal) var(--easing);
   }
 
   .faq-item:hover {
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    border-color: var(--color-terracotta);
   }
 
   .faq-item__question {
