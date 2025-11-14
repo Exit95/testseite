@@ -1,0 +1,273 @@
+/* Angepasstes Styling für den Buchungskalender - Auszeit Design */
+
+/* Überschreibe die Standard-Farben mit den Auszeit-Farben */
+.booking-calendar {
+  --primary-color: #6B5B53; /* clay-brown */
+  --primary-hover: #5a4b44;
+  --secondary-color: #D9C9B9; /* warm-beige */
+  --success-color: #B1735C; /* terracotta */
+  --danger-color: #c45a3f;
+  --background: #F6F2ED; /* off-white */
+  --surface: #FFFFFF;
+  --border-color: #D9C9B9;
+  --text-primary: #2B2B2B; /* charcoal */
+  --text-secondary: #6B5B53;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --radius: 16px;
+  --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Calendar Header */
+.booking-calendar .calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.booking-calendar .calendar-header h2 {
+  font-family: 'Cinzel', serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.booking-calendar .calendar-nav {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.booking-calendar .calendar-nav button {
+  background: var(--surface);
+  border: 2px solid var(--border-color);
+  color: var(--primary-color);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.booking-calendar .calendar-nav button:hover {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.booking-calendar .calendar-month-year {
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  font-size: 1.125rem;
+  min-width: 200px;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+/* Calendar Grid */
+.booking-calendar .calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.booking-calendar .calendar-weekday {
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  padding: 0.75rem;
+  text-transform: uppercase;
+}
+
+.booking-calendar .calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+  font-weight: 500;
+  border: 2px solid transparent;
+  background: var(--background);
+  color: var(--text-primary);
+}
+
+.booking-calendar .calendar-day:hover:not(.disabled):not(.blocked) {
+  background: var(--primary-color);
+  color: white;
+  transform: scale(1.05);
+  box-shadow: var(--shadow-md);
+}
+
+.booking-calendar .calendar-day.today {
+  border-color: var(--primary-color);
+  font-weight: 600;
+}
+
+.booking-calendar .calendar-day.selected {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.booking-calendar .calendar-day.disabled {
+  color: var(--text-secondary);
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.booking-calendar .calendar-day.blocked {
+  background: repeating-linear-gradient(
+    45deg,
+    #f3f4f6,
+    #f3f4f6 10px,
+    #e5e7eb 10px,
+    #e5e7eb 20px
+  );
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
+.booking-calendar .calendar-day.other-month {
+  opacity: 0.4;
+}
+
+/* Time Slots */
+.booking-calendar .time-slots-container {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid var(--border-color);
+}
+
+.booking-calendar .time-slots-header {
+  font-family: 'Cinzel', serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.booking-calendar .time-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.75rem;
+}
+
+.booking-calendar .time-slot {
+  padding: 1rem;
+  background: var(--background);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius);
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.booking-calendar .time-slot:hover:not(.booked):not(.full) {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.booking-calendar .time-slot.selected {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-md);
+}
+
+.booking-calendar .time-slot.booked {
+  background: var(--secondary-color);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.booking-calendar .time-slot.full {
+  background: #fee2e2;
+  color: #991b1b;
+  cursor: not-allowed;
+  border-color: #fecaca;
+}
+
+.booking-calendar .time-slot .capacity-info {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  opacity: 0.8;
+}
+
+/* Buttons */
+.booking-calendar .btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  border: none;
+  font-family: 'Inter', sans-serif;
+}
+
+.booking-calendar .btn-primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.booking-calendar .btn-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.booking-calendar .btn-secondary {
+  background: var(--secondary-color);
+  color: var(--text-primary);
+}
+
+.booking-calendar .btn-secondary:hover {
+  background: #c9b9a9;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .booking-calendar .calendar-grid {
+    gap: 0.25rem;
+  }
+
+  .booking-calendar .calendar-day {
+    font-size: 0.875rem;
+  }
+
+  .booking-calendar .time-slots-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .booking-calendar .calendar-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .booking-calendar .calendar-nav {
+    width: 100%;
+    justify-content: center;
+  }
+}
+

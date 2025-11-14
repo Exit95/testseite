@@ -1,0 +1,86 @@
+---
+import { content } from '../data/content';
+---
+
+<section class="offerings">
+  <div class="container">
+    <h2 class="offerings__title">{content.offerings.title}</h2>
+    <div class="offerings__grid">
+      {
+        content.offerings.items.map((item) => (
+          <div class="offering-card">
+            <h3 class="offering-card__name">{item.name}</h3>
+            <p class="offering-card__price">{item.price}</p>
+          </div>
+        ))
+      }
+    </div>
+    <p class="offerings__note">{content.offerings.note}</p>
+  </div>
+</section>
+
+<style>
+  .offerings {
+    padding: var(--space-12) var(--gutter);
+    background-color: var(--color-background);
+  }
+
+  .container {
+    max-width: var(--max-width);
+    margin: 0 auto;
+  }
+
+  .offerings__title {
+    font-family: var(--font-serif);
+    color: var(--color-clay-brown);
+    text-align: center;
+    margin-bottom: var(--space-6);
+  }
+
+  .offerings__grid {
+    display: grid;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+  }
+
+  @media (min-width: 640px) {
+    .offerings__grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .offering-card {
+    background-color: var(--color-warm-beige);
+    padding: var(--space-5);
+    border-radius: var(--radius);
+    text-align: center;
+    transition: all var(--duration-normal) var(--easing);
+  }
+
+  .offering-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .offering-card__name {
+    font-family: var(--font-serif);
+    color: var(--color-clay-brown);
+    font-size: 1.5rem;
+    margin-bottom: var(--space-2);
+  }
+
+  .offering-card__price {
+    font-size: 1.25rem;
+    color: var(--color-terracotta);
+    font-weight: 600;
+  }
+
+  .offerings__note {
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+</style>

@@ -1,0 +1,146 @@
+---
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const url = Astro.site || 'https://auszeit-keramik.de';
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={url} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={`${url}/og-image.jpg`} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={url} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={`${url}/og-image.jpg`} />
+
+    <link rel="canonical" href={url} />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "Auszeit Keramik Malatelier",
+        "description": "Keramik bemalen in ruhiger Atmosphäre. Jetzt Termin sichern.",
+        "url": "https://auszeit-keramik.de",
+        "telephone": "+49 123 456789",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Musterstraße 123",
+          "addressLocality": "Musterstadt",
+          "postalCode": "12345",
+          "addressCountry": "DE"
+        },
+        "openingHoursSpecification": [
+          {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Tuesday", "Wednesday", "Thursday", "Friday"],
+            "opens": "14:00",
+            "closes": "19:00"
+          },
+          {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Saturday", "Sunday"],
+            "opens": "10:00",
+            "closes": "18:00"
+          }
+        ],
+        "priceRange": "€€"
+      }
+    </script>
+  </head>
+  <body>
+    <a href="#main-content" class="skip-link">Zum Hauptinhalt springen</a>
+    <main id="main-content">
+      <slot />
+    </main>
+    <footer class="footer">
+      <div class="footer__container">
+        <div class="footer__links">
+          <a href="#impressum">Impressum</a>
+          <span class="footer__separator">·</span>
+          <a href="#datenschutz">Datenschutz</a>
+        </div>
+        <p class="footer__copyright">© 2025 Auszeit Keramik Malatelier</p>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style is:global>
+  @import '../styles/global.css';
+</style>
+
+<style>
+  .skip-link {
+    position: absolute;
+    top: -100px;
+    left: 0;
+    background-color: var(--color-clay-brown);
+    color: var(--color-off-white);
+    padding: var(--space-2) var(--space-4);
+    text-decoration: none;
+    z-index: 100;
+  }
+
+  .skip-link:focus {
+    top: 0;
+  }
+
+  .footer {
+    background-color: var(--color-clay-brown);
+    color: var(--color-off-white);
+    padding: var(--space-8) var(--gutter);
+  }
+
+  .footer__container {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .footer__links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+  }
+
+  .footer__links a {
+    color: var(--color-off-white);
+    text-decoration: underline;
+    transition: opacity var(--duration-normal) var(--easing);
+  }
+
+  .footer__links a:hover {
+    opacity: 0.8;
+  }
+
+  .footer__separator {
+    opacity: 0.5;
+  }
+
+  .footer__copyright {
+    font-size: 0.875rem;
+    opacity: 0.7;
+  }
+</style>

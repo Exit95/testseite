@@ -1,0 +1,36 @@
+---
+import { content } from '../data/content';
+---
+
+<section class="intro">
+  <div class="container">
+    <p class="intro__text">{content.intro.text}</p>
+  </div>
+</section>
+
+<style>
+  .intro {
+    padding: var(--space-12) var(--gutter);
+    background-color: var(--color-background);
+  }
+
+  .container {
+    max-width: var(--max-width);
+    margin: 0 auto;
+  }
+
+  .intro__text {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    text-align: center;
+    color: var(--color-text-secondary);
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  @media (min-width: 768px) {
+    .intro__text {
+      font-size: 1.5rem;
+    }
+  }
+</style>

@@ -1,0 +1,101 @@
+---
+interface Props {
+  icon: string;
+  title: string;
+  text: string;
+  number: number;
+}
+
+const { icon, title, text, number } = Astro.props;
+
+const iconMap: Record<string, string> = {
+  calendar: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+  brush: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01',
+  gift: 'M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7',
+};
+---
+
+<div class="step-item">
+  <div class="step-item__icon">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" d={iconMap[icon]} />
+    </svg>
+    <div class="step-item__number">{number}</div>
+  </div>
+  <div class="step-item__content">
+    <h3>{title}</h3>
+    <p>{text}</p>
+  </div>
+</div>
+
+<style>
+  .step-item {
+    display: flex;
+    gap: var(--space-4);
+    align-items: flex-start;
+  }
+
+  .step-item__icon {
+    position: relative;
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    background-color: var(--color-warm-beige);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-clay-brown);
+  }
+
+  .step-item__icon svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .step-item__number {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 28px;
+    height: 28px;
+    background-color: var(--color-terracotta);
+    color: var(--color-off-white);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.875rem;
+    border: 3px solid var(--color-background);
+  }
+
+  .step-item__content {
+    flex: 1;
+  }
+
+  .step-item__content h3 {
+    font-family: var(--font-serif);
+    color: var(--color-clay-brown);
+    margin-bottom: var(--space-2);
+  }
+
+  .step-item__content p {
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+  }
+
+  @media (max-width: 640px) {
+    .step-item {
+      flex-direction: column;
+      text-align: center;
+      align-items: center;
+    }
+  }
+</style>

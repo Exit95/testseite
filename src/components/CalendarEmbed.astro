@@ -1,0 +1,157 @@
+---
+interface Props {
+  title?: string;
+  src: string;
+  height?: string;
+}
+
+const { title = 'Terminbuchung', src, height = '800px' } = Astro.props;
+---
+
+<div class="calendar-embed" id="calendar-section">
+  <div class="calendar-embed__header">
+    <h2>{title}</h2>
+  </div>
+  <div class="calendar-embed__container">
+    <div class="calendar-embed__loading" id="calendar-loading">
+      <div class="skeleton skeleton--tall"></div>
+      <p>Kalender wird geladen...</p>
+    </div>
+    <div class="calendar-embed__error" id="calendar-error" hidden>
+      <p>Der Kalender konnte nicht geladen werden.</p>
+      <p>Bitte kontaktiere uns direkt per Telefon oder WhatsApp.</p>
+    </div>
+    <iframe
+      id="calendar-iframe"
+      src={src}
+      style={`height: ${height};`}
+      frameborder="0"
+      loading="lazy"
+      title={title}
+    ></iframe>
+  </div>
+</div>
+
+<script>
+  function initCalendar() {
+    const iframe = document.getElementById('calendar-iframe') as HTMLIFrameElement;
+    const loading = document.getElementById('calendar-loading');
+    const error = document.getElementById('calendar-error');
+
+    if (!iframe || !loading || !error) return;
+
+    const handleLoad = () => {
+      loading.hidden = true;
+      if (typeof window !== 'undefined' && 'umami' in window) {
+        (window as any).umami?.track('calendar_open');
+      }
+    };
+
+    const handleError = () => {
+      loading.hidden = true;
+      error.hidden = false;
+    };
+
+    iframe.addEventListener('load', handleLoad);
+    iframe.addEventListener('error', handleError);
+
+    setTimeout(() => {
+      if (!loading.hidden) {
+        handleLoad();
+      }
+    }, 5000);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCalendar);
+  } else {
+    initCalendar();
+  }
+</script>
+
+<style>
+  .calendar-embed {
+    scroll-margin-top: var(--space-8);
+  }
+
+  .calendar-embed__header {
+    position: sticky;
+    top: 0;
+    background-color: var(--color-background);
+    padding: var(--space-4) 0;
+    z-index: 10;
+    text-align: center;
+  }
+
+  .calendar-embed__header h2 {
+    color: var(--color-clay-brown);
+    font-family: var(--font-serif);
+  }
+
+  .calendar-embed__container {
+    position: relative;
+    width: 100%;
+    min-height: 600px;
+  }
+
+  .calendar-embed__loading,
+  .calendar-embed__error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    padding: var(--space-8) var(--space-4);
+    text-align: center;
+    color: var(--color-text-secondary);
+  }
+
+  .calendar-embed__error {
+    background-color: var(--color-warm-beige);
+    border-radius: var(--radius);
+    padding: var(--space-6);
+  }
+
+  .calendar-embed__error p:first-child {
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  iframe {
+    width: 100%;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--color-warm-beige) 0%,
+      var(--color-surface) 50%,
+      var(--color-warm-beige) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius);
+  }
+
+  .skeleton--tall {
+    width: 100%;
+    height: 600px;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton {
+      animation: none;
+    }
+  }
+</style>

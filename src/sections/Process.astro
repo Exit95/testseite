@@ -1,0 +1,55 @@
+---
+import StepItem from '../components/StepItem.astro';
+import { content } from '../data/content';
+---
+
+<section class="process">
+  <div class="container">
+    <h2 class="process__title">{content.process.title}</h2>
+    <div class="process__steps">
+      {
+        content.process.steps.map((step, index) => (
+          <StepItem
+            icon={step.icon}
+            title={step.title}
+            text={step.text}
+            number={index + 1}
+          />
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .process {
+    padding: var(--space-12) var(--gutter);
+    background-color: var(--color-off-white);
+  }
+
+  .container {
+    max-width: var(--max-width);
+    margin: 0 auto;
+  }
+
+  .process__title {
+    font-family: var(--font-serif);
+    color: var(--color-clay-brown);
+    text-align: center;
+    margin-bottom: var(--space-8);
+  }
+
+  .process__steps {
+    display: grid;
+    gap: var(--space-8);
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  @media (min-width: 768px) {
+    .process__steps {
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-6);
+    }
+  }
+</style>

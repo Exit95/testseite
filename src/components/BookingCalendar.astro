@@ -1,0 +1,261 @@
+---
+interface Props {
+  title?: string;
+}
+
+const { title = 'Termin buchen' } = Astro.props;
+---
+
+<link rel="stylesheet" href="/booking-calendar.css">
+<link rel="stylesheet" href="/booking-calendar-custom.css">
+
+<section class="booking-section" id="calendar-section">
+  <div class="booking-container">
+    <h2 class="booking-title">{title}</h2>
+    <div id="bookingCalendar" class="booking-calendar"></div>
+    
+    <!-- Buchungsformular -->
+    <div id="bookingForm" class="booking-form hidden">
+      <h3>Buchung bestätigen</h3>
+      <div class="booking-details">
+        <p><strong>Datum:</strong> <span id="selectedDate"></span></p>
+        <p><strong>Uhrzeit:</strong> <span id="selectedTime"></span></p>
+        <p><strong>Verfügbare Plätze:</strong> <span id="availableCapacity">-</span></p>
+      </div>
+      
+      <form id="bookingFormElement">
+        <div class="form-group">
+          <label for="name">Name *</label>
+          <input type="text" id="name" name="name" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="email">E-Mail *</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="phone">Telefon</label>
+          <input type="tel" id="phone" name="phone">
+        </div>
+        
+        <div class="form-group">
+          <label for="participants">Anzahl Personen *</label>
+          <input type="number" id="participants" name="participants" min="1" max="15" value="1" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="notes">Anmerkungen</label>
+          <textarea id="notes" name="notes" rows="3"></textarea>
+        </div>
+        
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="backToCalendar">Zurück</button>
+          <button type="submit" class="btn btn-primary">Verbindlich buchen</button>
+        </div>
+      </form>
+    </div>
+    
+    <!-- Erfolgs-/Fehlermeldung -->
+    <div id="message" class="message hidden"></div>
+  </div>
+</section>
+
+<style>
+  .booking-section {
+    padding: var(--space-12) var(--gutter);
+    background-color: var(--color-background);
+  }
+
+  .booking-container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .booking-title {
+    font-family: var(--font-serif);
+    color: var(--color-clay-brown);
+    text-align: center;
+    margin-bottom: var(--space-8);
+    font-size: 2rem;
+  }
+
+  .booking-calendar {
+    background: var(--color-off-white);
+    border-radius: var(--radius);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-md);
+  }
+
+  .booking-form {
+    background: var(--color-off-white);
+    border-radius: var(--radius);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-md);
+    margin-top: var(--space-6);
+  }
+
+  .booking-form h3 {
+    font-family: var(--font-serif);
+    color: var(--color-clay-brown);
+    margin-bottom: var(--space-4);
+  }
+
+  .booking-details {
+    background: var(--color-warm-beige);
+    padding: var(--space-4);
+    border-radius: var(--radius);
+    margin-bottom: var(--space-6);
+  }
+
+  .booking-details p {
+    margin-bottom: var(--space-2);
+  }
+
+  .form-group {
+    margin-bottom: var(--space-4);
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-weight: 500;
+    color: var(--color-clay-brown);
+  }
+
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: var(--space-3);
+    border: 2px solid var(--color-warm-beige);
+    border-radius: var(--radius);
+    font-family: var(--font-sans);
+    transition: border-color var(--duration-normal) var(--easing);
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--color-clay-brown);
+  }
+
+  .form-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+    margin-top: var(--space-6);
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  .message {
+    margin-top: var(--space-6);
+    padding: var(--space-4);
+    border-radius: var(--radius);
+    text-align: center;
+  }
+
+  .message.success {
+    background-color: #d1fae5;
+    color: #065f46;
+  }
+
+  .message.error {
+    background-color: #fee2e2;
+    color: #991b1b;
+  }
+</style>
+
+<script>
+  // Kalender-Initialisierung nach dem Laden der Seite
+  document.addEventListener('DOMContentLoaded', () => {
+    // Prüfen ob BookingCalendar verfügbar ist
+    if (typeof BookingCalendar === 'undefined') {
+      console.error('BookingCalendar ist nicht geladen');
+      return;
+    }
+
+    // Kalender initialisieren
+    const calendar = new BookingCalendar('#bookingCalendar', {
+      locale: 'de',
+      firstDayOfWeek: 1, // Montag
+      minDate: new Date(),
+      maxDate: new Date(new Date().setMonth(new Date().getMonth() + 3)),
+      timeSlots: {
+        enabled: true,
+        start: '14:00',
+        end: '19:00',
+        duration: 120, // 2 Stunden
+      },
+      blockedDates: [],
+      blockedWeekdays: [1], // Montag geschlossen
+      bookedSlots: [],
+      onDateSelect: function(date, timeSlot) {
+        showBookingForm(date, timeSlot);
+      }
+    });
+
+    // Formular-Handler
+    function showBookingForm(date, timeSlot) {
+      document.getElementById('bookingCalendar').style.display = 'none';
+      document.getElementById('bookingForm').classList.remove('hidden');
+      document.getElementById('selectedDate').textContent = formatDate(date);
+      document.getElementById('selectedTime').textContent = timeSlot;
+      document.getElementById('availableCapacity').textContent = '15'; // Beispielwert
+    }
+
+    function formatDate(date) {
+      return date.toLocaleDateString('de-DE', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    // Zurück-Button
+    document.getElementById('backToCalendar')?.addEventListener('click', () => {
+      document.getElementById('bookingForm').classList.add('hidden');
+      document.getElementById('bookingCalendar').style.display = 'block';
+    });
+
+    // Formular-Submit
+    document.getElementById('bookingFormElement')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(e.target);
+      const data = {
+        date: document.getElementById('selectedDate').textContent,
+        time: document.getElementById('selectedTime').textContent,
+        name: formData.get('name'),
+        email: formData.get('email'),
+        phone: formData.get('phone'),
+        participants: formData.get('participants'),
+        notes: formData.get('notes')
+      };
+
+      // Hier würde normalerweise ein API-Call erfolgen
+      console.log('Buchungsdaten:', data);
+
+      // Erfolgsmeldung anzeigen
+      const messageEl = document.getElementById('message');
+      messageEl.textContent = 'Vielen Dank! Ihre Buchung wurde erfolgreich übermittelt. Sie erhalten in Kürze eine Bestätigungs-E-Mail.';
+      messageEl.className = 'message success';
+      messageEl.classList.remove('hidden');
+
+      // Formular ausblenden
+      document.getElementById('bookingForm').classList.add('hidden');
+
+      // Nach 5 Sekunden zurück zum Kalender
+      setTimeout(() => {
+        messageEl.classList.add('hidden');
+        document.getElementById('bookingCalendar').style.display = 'block';
+        e.target.reset();
+      }, 5000);
+    });
+  });
+</script>
+
+<script is:inline src="/booking-calendar.js"></script>

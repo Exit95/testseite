@@ -1,0 +1,58 @@
+---
+interface Props {
+  size?: 'small' | 'medium' | 'large';
+}
+
+const { size = 'large' } = Astro.props;
+---
+
+<div class={`logo-lockup logo-lockup--${size}`}>
+  <div class="logo-lockup__wordmark">Auszeit</div>
+  <div class="logo-lockup__subtitle">Keramik · Malatelier</div>
+</div>
+
+<style>
+  .logo-lockup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .logo-lockup__wordmark {
+    font-family: var(--font-script);
+    color: var(--color-off-white);
+    line-height: 1;
+  }
+
+  .logo-lockup__subtitle {
+    font-family: var(--font-serif);
+    font-size: 0.75em;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--color-off-white);
+    font-weight: 400;
+  }
+
+  .logo-lockup--small .logo-lockup__wordmark {
+    font-size: 2rem;
+  }
+
+  .logo-lockup--medium .logo-lockup__wordmark {
+    font-size: 3rem;
+  }
+
+  .logo-lockup--large .logo-lockup__wordmark {
+    font-size: 4rem;
+  }
+
+  @media (min-width: 768px) {
+    .logo-lockup--large .logo-lockup__wordmark {
+      font-size: 6rem;
+    }
+
+    .logo-lockup--medium .logo-lockup__wordmark {
+      font-size: 4rem;
+    }
+  }
+</style>

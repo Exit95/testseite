@@ -1,0 +1,92 @@
+---
+interface Props {
+  href?: string;
+  variant?: 'primary' | 'secondary';
+  size?: 'small' | 'medium' | 'large';
+  type?: 'button' | 'submit' | 'reset';
+  ariaLabel?: string;
+}
+
+const {
+  href,
+  variant = 'primary',
+  size = 'medium',
+  type = 'button',
+  ariaLabel,
+} = Astro.props;
+
+const Tag = href ? 'a' : 'button';
+---
+
+<Tag
+  href={href}
+  type={!href ? type : undefined}
+  class={`btn btn--${variant} btn--${size}`}
+  aria-label={ariaLabel}
+>
+  <slot />
+</Tag>
+
+<style>
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    font-weight: 600;
+    border-radius: var(--radius);
+    border: 2px solid transparent;
+    transition: all var(--duration-normal) var(--easing);
+    text-decoration: none;
+    white-space: nowrap;
+    min-height: 44px;
+    padding: 0 var(--space-4);
+  }
+
+  .btn--small {
+    font-size: 0.875rem;
+    padding: 0 var(--space-3);
+    min-height: 36px;
+  }
+
+  .btn--medium {
+    font-size: 1rem;
+  }
+
+  .btn--large {
+    font-size: 1.125rem;
+    padding: 0 var(--space-5);
+    min-height: 52px;
+  }
+
+  .btn--primary {
+    background-color: var(--color-terracotta);
+    color: var(--color-off-white);
+  }
+
+  .btn--primary:hover {
+    background-color: var(--color-clay-brown);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .btn--primary:active {
+    transform: translateY(0);
+  }
+
+  .btn--secondary {
+    background-color: transparent;
+    color: var(--color-clay-brown);
+    border-color: var(--color-clay-brown);
+  }
+
+  .btn--secondary:hover {
+    background-color: var(--color-clay-brown);
+    color: var(--color-off-white);
+    transform: translateY(-1px);
+  }
+
+  .btn--secondary:active {
+    transform: translateY(0);
+  }
+</style>

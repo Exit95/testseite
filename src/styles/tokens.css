@@ -1,0 +1,60 @@
+:root {
+  /* Colors from brand identity */
+  --color-clay-brown: #6B5B53;
+  --color-warm-beige: #D9C9B9;
+  --color-off-white: #F6F2ED;
+  --color-charcoal: #2B2B2B;
+  --color-terracotta: #B1735C;
+
+  /* Semantic color tokens */
+  --color-background: var(--color-off-white);
+  --color-surface: var(--color-warm-beige);
+  --color-text-primary: var(--color-charcoal);
+  --color-text-secondary: var(--color-clay-brown);
+  --color-accent: var(--color-terracotta);
+  --color-focus: var(--color-terracotta);
+
+  /* Typography */
+  --font-script: 'Dancing Script', cursive;
+  --font-serif: 'Cinzel', serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Spacing (8px base) */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2rem;
+  --space-5: 2.5rem;
+  --space-6: 3rem;
+  --space-8: 4rem;
+  --space-10: 5rem;
+  --space-12: 6rem;
+
+  /* Layout */
+  --max-width: 1080px;
+  --gutter: 1.25rem;
+  --grid-columns: 12;
+
+  /* Border radius */
+  --radius: 16px;
+  --radius-sm: 8px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  /* Motion */
+  --duration-fast: 160ms;
+  --duration-normal: 200ms;
+  --duration-slow: 240ms;
+  --easing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+    --duration-slow: 0ms;
+  }
+}
