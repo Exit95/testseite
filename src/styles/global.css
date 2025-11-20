@@ -54,6 +54,53 @@ h3 {
   font-size: 1.5rem;
 }
 
+/* Sehr kleine Smartphones (< 375px) */
+@media (max-width: 374px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.75rem;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
+
+  body {
+    font-size: 0.9375rem;
+    /* 15px */
+  }
+}
+
+/* Kleine Smartphones (375px - 480px) */
+@media (min-width: 375px) and (max-width: 479px) {
+  h1 {
+    font-size: 2.25rem;
+  }
+
+  h2 {
+    font-size: 1.875rem;
+  }
+}
+
+/* Tablets und größere Smartphones */
+@media (min-width: 640px) {
+  h1 {
+    font-size: 3rem;
+  }
+
+  h2 {
+    font-size: 2.25rem;
+  }
+
+  h3 {
+    font-size: 1.625rem;
+  }
+}
+
+/* Desktop */
 @media (min-width: 768px) {
   h1 {
     font-size: 3.5rem;

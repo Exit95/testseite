@@ -1,6 +1,6 @@
 ---
-import FAQItem from '../components/FAQItem.astro';
-import { content } from '../data/content';
+import FAQItem from "../components/FAQItem.astro";
+import { content } from "../data/content";
 ---
 
 <section class="faq">
@@ -38,5 +38,32 @@ import { content } from '../data/content';
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+  }
+
+  /* Mobile Optimierungen */
+  @media (max-width: 374px) {
+    .faq {
+      padding: var(--space-8) var(--gutter);
+    }
+
+    .faq__title {
+      font-size: 1.75rem;
+      margin-bottom: var(--space-6);
+    }
+
+    .faq__list {
+      gap: var(--space-2);
+    }
+  }
+
+  @media (min-width: 375px) and (max-width: 639px) {
+    .faq {
+      padding: var(--space-10) var(--gutter);
+    }
+
+    .faq__title {
+      font-size: 1.875rem;
+      margin-bottom: var(--space-6);
+    }
   }
 </style>

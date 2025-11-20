@@ -4,7 +4,7 @@ interface Props {
   text?: string;
 }
 
-const { url, text = 'Instagram' } = Astro.props;
+const { url, text = "Instagram" } = Astro.props;
 ---
 
 <a
@@ -37,16 +37,16 @@ const { url, text = 'Instagram' } = Astro.props;
     const links = document.querySelectorAll('[data-track="instagram_click"]');
 
     links.forEach((link) => {
-      link.addEventListener('click', () => {
-        if (typeof window !== 'undefined' && 'umami' in window) {
-          (window as any).umami?.track('instagram_click');
+      link.addEventListener("click", () => {
+        if (typeof window !== "undefined" && "umami" in window) {
+          (window as any).umami?.track("instagram_click");
         }
       });
     });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initInstagramTracking);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initInstagramTracking);
   } else {
     initInstagramTracking();
   }
@@ -58,7 +58,7 @@ const { url, text = 'Instagram' } = Astro.props;
     align-items: center;
     gap: var(--space-2);
     background: transparent;
-    color: #E1306C;
+    color: #e1306c;
     font-weight: 600;
     transition: all var(--duration-normal) var(--easing);
     padding: var(--space-2) var(--space-3);
@@ -73,5 +73,21 @@ const { url, text = 'Instagram' } = Astro.props;
   .instagram-link svg {
     flex-shrink: 0;
   }
-</style>
 
+  /* Mobile Optimierungen */
+  @media (max-width: 639px) {
+    .instagram-link {
+      width: 100%;
+      justify-content: center;
+      padding: var(--space-3) var(--space-4);
+      min-height: var(--touch-target-min);
+    }
+  }
+
+  @media (max-width: 374px) {
+    .instagram-link {
+      font-size: 0.9375rem;
+      padding: var(--space-2) var(--space-3);
+    }
+  }
+</style>

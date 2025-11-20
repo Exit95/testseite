@@ -18,7 +18,8 @@ const { question, answer } = Astro.props;
       stroke="currentColor"
       stroke-width="2"
     >
-      <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+      <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"
+      ></path>
     </svg>
   </summary>
   <div class="faq-item__answer">
@@ -28,21 +29,21 @@ const { question, answer } = Astro.props;
 
 <script>
   function initFAQ() {
-    const faqItems = document.querySelectorAll('.faq-item');
+    const faqItems = document.querySelectorAll(".faq-item");
 
     faqItems.forEach((item) => {
-      item.addEventListener('toggle', () => {
-        if (item.hasAttribute('open')) {
-          if (typeof window !== 'undefined' && 'umami' in window) {
-            (window as any).umami?.track('faq_toggle');
+      item.addEventListener("toggle", () => {
+        if (item.hasAttribute("open")) {
+          if (typeof window !== "undefined" && "umami" in window) {
+            (window as any).umami?.track("faq_toggle");
           }
         }
       });
     });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initFAQ);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initFAQ);
   } else {
     initFAQ();
   }
@@ -100,5 +101,31 @@ const { question, answer } = Astro.props;
 
   .faq-item__answer p {
     margin: 0;
+  }
+
+  /* Mobile Optimierungen */
+  @media (max-width: 374px) {
+    .faq-item__question {
+      padding: var(--space-3);
+      font-size: 0.9375rem;
+      gap: var(--space-2);
+    }
+
+    .faq-item__icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    .faq-item__answer {
+      padding: 0 var(--space-3) var(--space-3) var(--space-3);
+      font-size: 0.9375rem;
+    }
+  }
+
+  @media (min-width: 375px) and (max-width: 639px) {
+    .faq-item__question {
+      padding: var(--space-3) var(--space-4);
+      min-height: var(--touch-target-min);
+    }
   }
 </style>

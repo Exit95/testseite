@@ -1,21 +1,21 @@
 ---
 interface Props {
   href?: string;
-  variant?: 'primary' | 'secondary';
-  size?: 'small' | 'medium' | 'large';
-  type?: 'button' | 'submit' | 'reset';
+  variant?: "primary" | "secondary";
+  size?: "small" | "medium" | "large";
+  type?: "button" | "submit" | "reset";
   ariaLabel?: string;
 }
 
 const {
   href,
-  variant = 'primary',
-  size = 'medium',
-  type = 'button',
+  variant = "primary",
+  size = "medium",
+  type = "button",
   ariaLabel,
 } = Astro.props;
 
-const Tag = href ? 'a' : 'button';
+const Tag = href ? "a" : "button";
 ---
 
 <Tag
@@ -46,7 +46,7 @@ const Tag = href ? 'a' : 'button';
   }
 
   .btn::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 50%;
     left: 50%;
@@ -55,7 +55,9 @@ const Tag = href ? 'a' : 'button';
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.3);
     transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
+    transition:
+      width 0.6s,
+      height 0.6s;
   }
 
   .btn:hover::before {
@@ -108,5 +110,29 @@ const Tag = href ? 'a' : 'button';
 
   .btn--secondary:active {
     transform: translateY(0);
+  }
+
+  /* Mobile Optimierungen */
+  @media (max-width: 639px) {
+    .btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .btn--large {
+      min-height: 48px; /* Größeres Touch-Target */
+    }
+  }
+
+  @media (max-width: 374px) {
+    .btn {
+      font-size: 0.9375rem;
+      padding: 0 var(--space-3);
+    }
+
+    .btn--large {
+      font-size: 1rem;
+      padding: 0 var(--space-4);
+    }
   }
 </style>

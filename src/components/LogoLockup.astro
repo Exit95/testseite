@@ -1,9 +1,9 @@
 ---
 interface Props {
-  size?: 'small' | 'medium' | 'large';
+  size?: "small" | "medium" | "large";
 }
 
-const { size = 'large' } = Astro.props;
+const { size = "large" } = Astro.props;
 ---
 
 <div class={`logo-lockup logo-lockup--${size}`}>
@@ -43,7 +43,44 @@ const { size = 'large' } = Astro.props;
   }
 
   .logo-lockup--large .logo-lockup__wordmark {
-    font-size: 5rem;
+    font-size: 3.5rem;
+  }
+
+  /* Sehr kleine Bildschirme */
+  @media (max-width: 374px) {
+    .logo-lockup--large .logo-lockup__wordmark {
+      font-size: 3rem;
+    }
+
+    .logo-lockup__subtitle {
+      font-size: 0.7em;
+      letter-spacing: 0.1em;
+    }
+  }
+
+  /* Kleine Smartphones */
+  @media (min-width: 375px) and (max-width: 479px) {
+    .logo-lockup--large .logo-lockup__wordmark {
+      font-size: 4rem;
+    }
+  }
+
+  /* Größere Smartphones */
+  @media (min-width: 480px) and (max-width: 639px) {
+    .logo-lockup--large .logo-lockup__wordmark {
+      font-size: 4.5rem;
+    }
+
+    .logo-lockup--medium .logo-lockup__wordmark {
+      font-size: 3.5rem;
+    }
+  }
+
+  /* Tablets */
+  @media (min-width: 640px) and (max-width: 767px) {
+    .logo-lockup--large .logo-lockup__wordmark {
+      font-size: 5.5rem;
+    }
   }
 
   @media (min-width: 768px) {

@@ -1,6 +1,6 @@
 ---
-import WhatsAppLink from '../components/WhatsAppLink.astro';
-import { content } from '../data/content';
+import WhatsAppLink from "../components/WhatsAppLink.astro";
+import { content } from "../data/content";
 ---
 
 <section class="contact">
@@ -15,11 +15,7 @@ import { content } from '../data/content';
         </div>
         <div class="contact__block">
           <h3>{content.contact.hours.title}</h3>
-          {
-            content.contact.hours.schedule.map((time) => (
-              <p>{time}</p>
-            ))
-          }
+          {content.contact.hours.schedule.map((time) => <p>{time}</p>)}
         </div>
         <div class="contact__block">
           <h3>Kontakt</h3>
@@ -27,7 +23,9 @@ import { content } from '../data/content';
             <a href={`tel:${content.contact.phone}`}>{content.contact.phone}</a>
           </p>
           <p>
-            <a href={`mailto:${content.contact.email}`}>{content.contact.email}</a>
+            <a href={`mailto:${content.contact.email}`}
+              >{content.contact.email}</a
+            >
           </p>
           <div class="contact__whatsapp">
             <WhatsAppLink
@@ -51,12 +49,11 @@ import { content } from '../data/content';
               stroke-linecap="round"
               stroke-linejoin="round"
               d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-            />
+            ></path>
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
-              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-            />
+              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
           </svg>
           <p>Karte hier einbetten</p>
         </div>
@@ -154,5 +151,70 @@ import { content } from '../data/content';
   .map-placeholder p {
     font-size: 0.875rem;
     opacity: 0.7;
+  }
+
+  /* Mobile Optimierungen */
+  @media (max-width: 374px) {
+    .contact {
+      padding: var(--space-8) var(--gutter);
+    }
+
+    .contact__title {
+      font-size: 1.75rem;
+      margin-bottom: var(--space-6);
+    }
+
+    .contact__grid {
+      gap: var(--space-6);
+    }
+
+    .contact__info {
+      gap: var(--space-4);
+    }
+
+    .contact__block h3 {
+      font-size: 1rem;
+    }
+
+    .contact__block p {
+      font-size: 0.9375rem;
+    }
+
+    .contact__map {
+      min-height: 300px;
+    }
+
+    .map-placeholder {
+      min-height: 300px;
+    }
+  }
+
+  @media (min-width: 375px) and (max-width: 639px) {
+    .contact {
+      padding: var(--space-10) var(--gutter);
+    }
+
+    .contact__title {
+      font-size: 1.875rem;
+      margin-bottom: var(--space-6);
+    }
+
+    .contact__grid {
+      gap: var(--space-6);
+    }
+
+    .contact__map {
+      min-height: 350px;
+    }
+
+    .map-placeholder {
+      min-height: 350px;
+    }
+  }
+
+  @media (min-width: 640px) and (max-width: 767px) {
+    .contact__grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

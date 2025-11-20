@@ -32,8 +32,12 @@
 
   /* Layout */
   --max-width: 1080px;
-  --gutter: 1.25rem;
+  --gutter: 1rem;
+  /* Kleinerer Standard-Gutter für mobile */
   --grid-columns: 12;
+
+  /* Touch targets */
+  --touch-target-min: 44px;
 
   /* Border radius */
   --radius: 16px;
@@ -49,6 +53,25 @@
   --duration-normal: 200ms;
   --duration-slow: 240ms;
   --easing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Responsive Layout Anpassungen */
+@media (min-width: 480px) {
+  :root {
+    --gutter: 1.25rem;
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --gutter: 2rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
