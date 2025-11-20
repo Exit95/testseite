@@ -1,15 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" rx="20" fill="#8B6F47"/>
-  <!-- Pinsel-Griff -->
-  <rect x="42" y="65" width="16" height="25" rx="2" fill="#5A4A3A"/>
-  <!-- Pinsel-Zwinge -->
-  <rect x="40" y="60" width="20" height="8" rx="1" fill="#7A6A5A"/>
-  <!-- Pinsel-Borsten -->
-  <path d="M 35 60 Q 30 45 28 35 Q 28 25 32 20 L 38 25 L 42 60 Z" fill="#F5F1E8" opacity="0.9"/>
-  <path d="M 42 60 Q 40 40 40 30 Q 40 20 42 15 L 48 20 L 50 60 Z" fill="#F5F1E8"/>
-  <path d="M 50 60 Q 52 40 54 30 Q 56 20 58 15 L 62 20 L 58 60 Z" fill="#F5F1E8"/>
-  <path d="M 58 60 Q 62 45 65 35 Q 68 25 68 20 L 62 25 L 58 60 Z" fill="#F5F1E8" opacity="0.9"/>
-  <!-- Farbklecks -->
-  <ellipse cx="70" cy="30" rx="8" ry="6" fill="#C17B5C" opacity="0.8"/>
-  <ellipse cx="75" cy="28" rx="5" ry="4" fill="#D4A574" opacity="0.7"/>
+  <!-- Hintergrund -->
+  <rect width="100" height="100" rx="20" fill="#A67C52"/>
+
+  <!-- Pinsel-Griff (Holz) -->
+  <rect x="38" y="60" width="12" height="32" rx="1.5" fill="#5A4228"/>
+  <rect x="39" y="60" width="10" height="32" rx="1.5" fill="#6B4E2E"/>
+  <!-- Holzmaserung -->
+  <line x1="41" y1="62" x2="41" y2="90" stroke="#5A4228" stroke-width="0.5" opacity="0.3"/>
+  <line x1="44" y1="62" x2="44" y2="90" stroke="#5A4228" stroke-width="0.5" opacity="0.3"/>
+  <line x1="47" y1="62" x2="47" y2="90" stroke="#5A4228" stroke-width="0.5" opacity="0.3"/>
+
+  <!-- Pinsel-Zwinge (Metall) -->
+  <rect x="36" y="56" width="16" height="6" rx="1" fill="#8B7355"/>
+  <rect x="36.5" y="56.5" width="15" height="5" rx="0.8" fill="#A89080"/>
+  <ellipse cx="44" cy="59" rx="6" ry="1.5" fill="#8B7355" opacity="0.4"/>
+
+  <!-- Pinsel-Borsten (detaillierter) -->
+  <!-- Äußere Borsten links -->
+  <path d="M 32 56 Q 28 42 26 32 Q 25 22 27 15 Q 28 12 30 10 L 34 18 L 36 56 Z" fill="#F5EFE7" opacity="0.85"/>
+  <path d="M 34 56 Q 31 40 30 30 Q 29 20 31 13 L 36 20 L 38 56 Z" fill="#FAF8F5" opacity="0.9"/>
+
+  <!-- Mittlere Borsten -->
+  <path d="M 38 56 Q 37 38 37 28 Q 37 18 39 10 L 42 16 L 42 56 Z" fill="#FFFFFF"/>
+  <path d="M 42 56 Q 42 36 42 26 Q 42 16 44 8 L 46 14 L 46 56 Z" fill="#FFFFFF"/>
+  <path d="M 46 56 Q 46 36 46 26 Q 46 16 48 8 L 50 14 L 50 56 Z" fill="#FFFFFF"/>
+
+  <!-- Äußere Borsten rechts -->
+  <path d="M 50 56 Q 51 40 52 30 Q 53 20 51 13 L 48 20 L 50 56 Z" fill="#FAF8F5" opacity="0.9"/>
+  <path d="M 52 56 Q 54 42 56 32 Q 57 22 55 15 Q 54 12 52 10 L 50 18 L 52 56 Z" fill="#F5EFE7" opacity="0.85"/>
+
+  <!-- Farbklecks (Terracotta) -->
+  <ellipse cx="68" cy="28" rx="10" ry="8" fill="#C17B5C" opacity="0.9"/>
+  <ellipse cx="71" cy="26" rx="6" ry="5" fill="#D4A574" opacity="0.8"/>
+  <ellipse cx="66" cy="30" rx="4" ry="3" fill="#E8D5C4" opacity="0.7"/>
+
+  <!-- Pinsel-Spitze (einzelne Haare) -->
+  <path d="M 39 10 Q 38 6 38 3" stroke="#F5EFE7" stroke-width="0.8" fill="none" opacity="0.6"/>
+  <path d="M 42 8 Q 42 4 42 1" stroke="#FFFFFF" stroke-width="0.8" fill="none"/>
+  <path d="M 44 8 Q 44 4 44 1" stroke="#FFFFFF" stroke-width="0.8" fill="none"/>
+  <path d="M 46 8 Q 46 4 46 1" stroke="#FFFFFF" stroke-width="0.8" fill="none"/>
+  <path d="M 49 10 Q 50 6 50 3" stroke="#F5EFE7" stroke-width="0.8" fill="none" opacity="0.6"/>
 </svg>
