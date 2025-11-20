@@ -1,0 +1,147 @@
+---
+interface Props {
+  id: string;
+  title: string;
+}
+
+const { id, title } = Astro.props;
+---
+
+<div id={id} class="modal" role="dialog" aria-modal="true" aria-labelledby={`${id}-title`}>
+  <div class="modal__overlay" data-modal-close></div>
+  <div class="modal__content">
+    <div class="modal__header">
+      <h2 id={`${id}-title`} class="modal__title">{title}</h2>
+      <button class="modal__close" data-modal-close aria-label="Schließen">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="modal__body">
+      <slot />
+    </div>
+  </div>
+</div>
+
+<style>
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+  }
+
+  .modal.is-open {
+    display: flex;
+  }
+
+  .modal__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal__content {
+    position: relative;
+    background-color: var(--color-off-white);
+    border-radius: var(--radius-lg);
+    max-width: 600px;
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-xl);
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-5);
+    border-bottom: 1px solid var(--color-warm-beige);
+  }
+
+  .modal__title {
+    font-size: 1.5rem;
+    color: var(--color-clay-brown);
+    margin: 0;
+  }
+
+  .modal__close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--space-2);
+    color: var(--color-clay-brown);
+    transition: all var(--duration-normal) var(--easing);
+    border-radius: var(--radius);
+  }
+
+  .modal__close:hover {
+    background-color: var(--color-warm-beige);
+    transform: rotate(90deg);
+  }
+
+  .modal__body {
+    padding: var(--space-5);
+    overflow-y: auto;
+    color: var(--color-text-primary);
+    line-height: 1.6;
+  }
+
+  .modal__body :global(h3) {
+    color: var(--color-clay-brown);
+    margin-top: var(--space-4);
+    margin-bottom: var(--space-2);
+  }
+
+  .modal__body :global(p) {
+    margin-bottom: var(--space-3);
+  }
+
+  .modal__body :global(a) {
+    color: var(--color-terracotta);
+    text-decoration: underline;
+  }
+
+  @media (max-width: 640px) {
+    .modal__content {
+      max-height: 90vh;
+    }
+
+    .modal__title {
+      font-size: 1.25rem;
+    }
+  }
+</style>
+

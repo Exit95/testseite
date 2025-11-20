@@ -1,4 +1,6 @@
 ---
+import Modal from '../components/Modal.astro';
+
 interface Props {
   title: string;
   description: string;
@@ -73,16 +75,80 @@ const url = Astro.site || 'https://auszeit-keramik.de';
       <slot />
     </main>
     <script src="../scripts/scroll-animations.js"></script>
+    <script src="../scripts/modal.js"></script>
     <footer class="footer">
       <div class="footer__container">
         <div class="footer__links">
-          <a href="#impressum">Impressum</a>
+          <a href="#" data-modal-trigger="impressum-modal">Impressum</a>
           <span class="footer__separator">·</span>
-          <a href="#datenschutz">Datenschutz</a>
+          <a href="#" data-modal-trigger="datenschutz-modal">Datenschutz</a>
         </div>
         <p class="footer__copyright">© 2025 Auszeit Keramik Malatelier</p>
       </div>
     </footer>
+
+    <!-- Impressum Modal -->
+    <Modal id="impressum-modal" title="Impressum">
+      <h3>Angaben gemäß § 5 TMG</h3>
+      <p>
+        Auszeit Keramik Malatelier<br />
+        Musterstraße 123<br />
+        12345 Musterstadt
+      </p>
+
+      <h3>Kontakt</h3>
+      <p>
+        Telefon: +49 (0) 123 456789<br />
+        E-Mail: info@auszeit-keramik.de
+      </p>
+
+      <h3>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV</h3>
+      <p>
+        Max Mustermann<br />
+        Musterstraße 123<br />
+        12345 Musterstadt
+      </p>
+
+      <h3>Haftungsausschluss</h3>
+      <p>
+        Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit,
+        Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen.
+      </p>
+    </Modal>
+
+    <!-- Datenschutz Modal -->
+    <Modal id="datenschutz-modal" title="Datenschutzerklärung">
+      <h3>1. Datenschutz auf einen Blick</h3>
+      <p>
+        Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren
+        personenbezogenen Daten passiert, wenn Sie diese Website besuchen.
+      </p>
+
+      <h3>2. Allgemeine Hinweise und Pflichtinformationen</h3>
+      <p>
+        Die Betreiber dieser Seiten nehmen den Schutz Ihrer persönlichen Daten sehr ernst.
+        Wir behandeln Ihre personenbezogenen Daten vertraulich und entsprechend der
+        gesetzlichen Datenschutzvorschriften sowie dieser Datenschutzerklärung.
+      </p>
+
+      <h3>3. Datenerfassung auf dieser Website</h3>
+      <p>
+        Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber.
+        Dessen Kontaktdaten können Sie dem Impressum dieser Website entnehmen.
+      </p>
+
+      <h3>4. Cookies</h3>
+      <p>
+        Diese Website verwendet keine Cookies zur Speicherung von Nutzerdaten.
+      </p>
+
+      <h3>5. Ihre Rechte</h3>
+      <p>
+        Sie haben jederzeit das Recht auf unentgeltliche Auskunft über Ihre gespeicherten
+        personenbezogenen Daten, deren Herkunft und Empfänger und den Zweck der
+        Datenverarbeitung sowie ein Recht auf Berichtigung oder Löschung dieser Daten.
+      </p>
+    </Modal>
   </body>
 </html>
 
