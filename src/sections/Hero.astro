@@ -11,14 +11,14 @@ import { content } from '../data/content';
     <LogoLockup size="large" />
     <p class="hero__claim">{content.hero.claim}</p>
     <div class="hero__actions">
-      <Button href="#calendar-section" variant="primary" size="large">
-        {content.hero.ctaPrimary}
-      </Button>
       <WhatsAppLink
         phone={content.contact.whatsapp}
         message={content.contact.whatsappMessage}
         text={content.hero.ctaSecondary}
       />
+      <Button href="#calendar-section" variant="primary" size="large">
+        {content.hero.ctaPrimary}
+      </Button>
       <InstagramLink
         url="https://www.instagram.com/auszeit_keramik_malatelier?igsh=MW90eGY0cGxlemt5cw=="
         text={content.hero.ctaTertiary}
