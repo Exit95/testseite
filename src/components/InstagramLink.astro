@@ -1,0 +1,101 @@
+---
+interface Props {
+  url: string;
+  text?: string;
+}
+
+const { url, text = 'Instagram' } = Astro.props;
+---
+
+<a
+  href={url}
+  class="instagram-link"
+  target="_blank"
+  rel="noopener noreferrer"
+  data-track="instagram_click"
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+  </svg>
+  <span>{text}</span>
+</a>
+
+<script>
+  function initInstagramTracking() {
+    const links = document.querySelectorAll('[data-track="instagram_click"]');
+
+    links.forEach((link) => {
+      link.addEventListener('click', () => {
+        if (typeof window !== 'undefined' && 'umami' in window) {
+          (window as any).umami?.track('instagram_click');
+        }
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initInstagramTracking);
+  } else {
+    initInstagramTracking();
+  }
+</script>
+
+<style>
+  .instagram-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    color: white;
+    font-weight: 600;
+    transition: all var(--duration-normal) var(--easing);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .instagram-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    opacity: 0;
+    transition: opacity var(--duration-normal) var(--easing);
+  }
+
+  .instagram-link:hover::before {
+    opacity: 0.2;
+  }
+
+  .instagram-link:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(188, 24, 136, 0.3);
+  }
+
+  .instagram-link svg,
+  .instagram-link span {
+    position: relative;
+    z-index: 1;
+  }
+
+  .instagram-link svg {
+    flex-shrink: 0;
+  }
+</style>
+
