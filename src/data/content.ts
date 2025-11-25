@@ -40,9 +40,9 @@ export const content = {
     ],
     note: 'Abholbereit nach 10-14 Tagen.',
     pricing: [
-      { description: 'Farb- und Brennpauschale bis 3 Teile', price: '10,00€' },
-      { description: 'Farb- und Brennpauschale 4-6 Teile', price: '15,00€' },
-      { description: 'Farb- und Brennpauschale 7-9 Teile', price: '20,00€' },
+      { description: 'Farb- und Brennpauschale bis 3 Teile pro Person', price: '10,00€' },
+      { description: 'Farb- und Brennpauschale 4-6 Teile pro Person', price: '15,00€' },
+      { description: 'Farb- und Brennpauschale 7-9 Teile pro Person', price: '20,00€' },
     ],
   },
   faq: {
