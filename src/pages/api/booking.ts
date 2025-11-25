@@ -65,8 +65,8 @@ export const POST: APIRoute = async ({ request }) => {
     const bookingEmail = import.meta.env.BOOKING_EMAIL || 'info@auszeit-keramik.de';
     const fromEmail = import.meta.env.FROM_EMAIL || 'buchungen@auszeit-keramik.de';
 
-    // E-Mail-Benachrichtigung vorbereiten
-    const emailData = {
+    // E-Mail-Benachrichtigung für Admin vorbereiten
+    const adminEmailData = {
       to: bookingEmail,
       from: fromEmail,
       subject: `Neue Buchung: ${name} - ${date} ${time}`,
@@ -90,6 +90,77 @@ Anzahl Personen: ${participants}
 Datum: ${date}
 Uhrzeit: ${time}
 Notizen: ${notes || 'Keine'}
+      `
+    };
+
+    // Bestätigungs-E-Mail für Kunden vorbereiten
+    const customerEmailData = {
+      to: email,
+      from: fromEmail,
+      subject: `Buchungsbestätigung - Atelier Auszeit am ${date} um ${time}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #8B6F47;">Vielen Dank für Ihre Buchung!</h2>
+          <p>Liebe/r ${name},</p>
+          <p>Ihre Buchung wurde erfolgreich bestätigt. Wir freuen uns auf Ihren Besuch!</p>
+
+          <div style="background-color: #F5F0E8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #8B6F47; margin-top: 0;">Ihre Buchungsdetails:</h3>
+            <p><strong>Datum:</strong> ${date}</p>
+            <p><strong>Uhrzeit:</strong> ${time}</p>
+            <p><strong>Anzahl Personen:</strong> ${participants}</p>
+            ${notes ? `<p><strong>Ihre Notizen:</strong> ${notes}</p>` : ''}
+          </div>
+
+          <div style="background-color: #E8DCC8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #8B6F47; margin-top: 0;">Veranstaltungsort:</h3>
+            <p>
+              <strong>Atelier Auszeit</strong><br>
+              Feldstiege 6a<br>
+              48599 Gronau
+            </p>
+          </div>
+
+          <p><strong>Wichtig:</strong> Im Anhang dieser E-Mail finden Sie eine Kalenderdatei (.ics), die Sie direkt in Ihren Kalender importieren können.</p>
+
+          <p>Bei Fragen oder Änderungswünschen können Sie uns gerne kontaktieren:</p>
+          <p>
+            📧 E-Mail: info@auszeit-keramik.de<br>
+            📱 Telefon: +49 176 34255005
+          </p>
+
+          <p style="margin-top: 30px;">Herzliche Grüße,<br>
+          <strong>Irena Woschkowiak</strong><br>
+          Atelier Auszeit</p>
+        </div>
+      `,
+      text: `
+Vielen Dank für Ihre Buchung!
+
+Liebe/r ${name},
+
+Ihre Buchung wurde erfolgreich bestätigt. Wir freuen uns auf Ihren Besuch!
+
+IHRE BUCHUNGSDETAILS:
+Datum: ${date}
+Uhrzeit: ${time}
+Anzahl Personen: ${participants}
+${notes ? `Ihre Notizen: ${notes}` : ''}
+
+VERANSTALTUNGSORT:
+Atelier Auszeit
+Feldstiege 6a
+48599 Gronau
+
+Im Anhang dieser E-Mail finden Sie eine Kalenderdatei (.ics), die Sie direkt in Ihren Kalender importieren können.
+
+Bei Fragen oder Änderungswünschen können Sie uns gerne kontaktieren:
+E-Mail: info@auszeit-keramik.de
+Telefon: +49 176 34255005
+
+Herzliche Grüße,
+Irena Woschkowiak
+Atelier Auszeit
       `
     };
 
@@ -118,6 +189,7 @@ END:VCALENDAR`;
 
     // E-Mail-Versand (nur wenn SMTP konfiguriert ist)
     let emailSent = false;
+    let customerEmailSent = false;
     let emailError = null;
 
     if (import.meta.env.SMTP_HOST && import.meta.env.SMTP_USER && import.meta.env.SMTP_PASS) {
@@ -140,13 +212,13 @@ END:VCALENDAR`;
         await transporter.verify();
         console.log('SMTP-Verbindung erfolgreich');
 
-        // E-Mail senden
+        // E-Mail an Admin senden
         await transporter.sendMail({
           from: `"Atelier Auszeit - Irena Woschkowiak" <${fromEmail}>`,
           to: bookingEmail,
-          subject: emailData.subject,
-          text: emailData.text,
-          html: emailData.html,
+          subject: adminEmailData.subject,
+          text: adminEmailData.text,
+          html: adminEmailData.html,
           icalEvent: {
             filename: 'termin.ics',
             method: 'REQUEST',
@@ -155,7 +227,24 @@ END:VCALENDAR`;
         });
 
         emailSent = true;
-        console.log('✅ E-Mail erfolgreich gesendet an:', bookingEmail);
+        console.log('✅ Admin-E-Mail erfolgreich gesendet an:', bookingEmail);
+
+        // Bestätigungs-E-Mail an Kunden senden
+        await transporter.sendMail({
+          from: `"Atelier Auszeit - Irena Woschkowiak" <${fromEmail}>`,
+          to: customerEmailData.to,
+          subject: customerEmailData.subject,
+          text: customerEmailData.text,
+          html: customerEmailData.html,
+          icalEvent: {
+            filename: 'termin.ics',
+            method: 'REQUEST',
+            content: icalEvent,
+          },
+        });
+
+        customerEmailSent = true;
+        console.log('✅ Bestätigungs-E-Mail erfolgreich gesendet an:', email);
       } catch (error: any) {
         emailError = error.message;
         console.error('❌ Fehler beim E-Mail-Versand:', error);
@@ -177,6 +266,7 @@ END:VCALENDAR`;
         message: 'Buchung erfolgreich erstellt',
         calendarEvent: icalEvent,
         emailSent: emailSent,
+        customerEmailSent: customerEmailSent,
         emailError: emailError,
       }),
       {

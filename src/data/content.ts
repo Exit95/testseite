@@ -26,7 +26,7 @@ export const content = {
       {
         icon: 'gift',
         title: 'Abholen',
-        text: 'Nach 7 Tagen ist dein Werk glasiert und fertig zum Abholen.',
+        text: 'Nach 10-14 Tagen ist dein Werk glasiert und fertig zum Abholen.',
       },
     ],
   },
