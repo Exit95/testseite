@@ -66,9 +66,9 @@ export const content = {
       street: 'Feldstiege 6a',
       city: '48599 Gronau',
     },
-    phone: '+49 176 34255000',
+    phone: '+49 176 34255005',
     email: 'info@auszeit-keramik.de',
-    whatsapp: '+4917634255000',
+    whatsapp: '+4917634255005',
     whatsappMessage: 'Hallo, ich habe eine Frage zum Keramik-Malatelier.',
   },
   footer: {
