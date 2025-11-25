@@ -20,6 +20,21 @@ import { content } from '../data/content';
         ))
       }
     </div>
+
+    <div class="offerings__pricing">
+      <h3>Farb- und Brennpauschale</h3>
+      <div class="pricing__list">
+        {
+          content.offerings.pricing.map((item) => (
+            <div class="pricing__item">
+              <span class="pricing__description">{item.description}</span>
+              <span class="pricing__price">{item.price}</span>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+
     <p class="offerings__note">{content.offerings.note}</p>
   </div>
 </section>
@@ -120,6 +135,55 @@ import { content } from '../data/content';
     font-weight: 600;
   }
 
+  .offerings__pricing {
+    margin-top: var(--space-10);
+    margin-bottom: var(--space-6);
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .offerings__pricing h3 {
+    font-family: var(--font-serif);
+    color: var(--color-clay-brown);
+    text-align: center;
+    font-size: 1.75rem;
+    margin-bottom: var(--space-6);
+  }
+
+  .pricing__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    background-color: var(--color-background);
+    padding: var(--space-6);
+    border-radius: var(--radius);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .pricing__item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--color-warm-beige);
+  }
+
+  .pricing__item:last-child {
+    border-bottom: none;
+  }
+
+  .pricing__description {
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+  }
+
+  .pricing__price {
+    color: var(--color-terracotta);
+    font-weight: 600;
+    font-size: 1.125rem;
+  }
+
   .offerings__note {
     text-align: center;
     color: var(--color-text-secondary);
@@ -153,6 +217,28 @@ import { content } from '../data/content';
     .offering-card__price {
       font-size: 1rem;
     }
+
+    .offerings__pricing h3 {
+      font-size: 1.25rem;
+    }
+
+    .pricing__list {
+      padding: var(--space-4);
+    }
+
+    .pricing__item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-1);
+    }
+
+    .pricing__description {
+      font-size: 0.9375rem;
+    }
+
+    .pricing__price {
+      font-size: 1rem;
+    }
   }
 
   @media (min-width: 375px) and (max-width: 639px) {
@@ -166,6 +252,16 @@ import { content } from '../data/content';
 
     .offerings__grid {
       grid-template-columns: 1fr;
+    }
+
+    .offerings__pricing h3 {
+      font-size: 1.5rem;
+    }
+
+    .pricing__item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-1);
     }
   }
 </style>
