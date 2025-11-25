@@ -61,9 +61,9 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // E-Mail-Adressen aus Environment-Variablen
-    const bookingEmail = import.meta.env.BOOKING_EMAIL || 'info@auszeit-keramik.de';
-    const fromEmail = import.meta.env.FROM_EMAIL || 'buchungen@auszeit-keramik.de';
+	    // E-Mail-Adressen aus Environment-Variablen
+	    const bookingEmail = import.meta.env.BOOKING_EMAIL || 'keramik-auszeit@web.de';
+	    const fromEmail = import.meta.env.FROM_EMAIL || 'buchungen@auszeit-keramik.de';
 
     // E-Mail-Benachrichtigung für Admin vorbereiten
     const adminEmailData = {
@@ -123,11 +123,11 @@ Notizen: ${notes || 'Keine'}
 
           <p><strong>Wichtig:</strong> Im Anhang dieser E-Mail finden Sie eine Kalenderdatei (.ics), die Sie direkt in Ihren Kalender importieren können.</p>
 
-          <p>Bei Fragen oder Änderungswünschen können Sie uns gerne kontaktieren:</p>
-          <p>
-            📧 E-Mail: info@auszeit-keramik.de<br>
-            📱 Telefon: +49 176 34255005
-          </p>
+	          <p>Bei Fragen oder Änderungswünschen können Sie uns gerne kontaktieren:</p>
+	          <p>
+	            📧 E-Mail: keramik-auszeit@web.de<br>
+	            📱 Telefon: +49 176 34255005
+	          </p>
 
           <p style="margin-top: 30px;">Herzliche Grüße,<br>
           <strong>Irena Woschkowiak</strong><br>
@@ -154,8 +154,8 @@ Feldstiege 6a
 
 Im Anhang dieser E-Mail finden Sie eine Kalenderdatei (.ics), die Sie direkt in Ihren Kalender importieren können.
 
-Bei Fragen oder Änderungswünschen können Sie uns gerne kontaktieren:
-E-Mail: info@auszeit-keramik.de
+	Bei Fragen oder Änderungswünschen können Sie uns gerne kontaktieren:
+	E-Mail: keramik-auszeit@web.de
 Telefon: +49 176 34255005
 
 Herzliche Grüße,
