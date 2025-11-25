@@ -309,6 +309,11 @@ const { title = "Termin buchen" } = Astro.props;
       ?.addEventListener("submit", async (e) => {
         e.preventDefault();
 
+        const submitButton = e.target.querySelector('button[type="submit"]');
+        const originalButtonText = submitButton.textContent;
+        submitButton.disabled = true;
+        submitButton.textContent = "Wird gesendet...";
+
         const formData = new FormData(e.target);
         const data = {
           date: document.getElementById("selectedDate").textContent,
@@ -320,25 +325,54 @@ const { title = "Termin buchen" } = Astro.props;
           notes: formData.get("notes"),
         };
 
-        // Hier würde normalerweise ein API-Call erfolgen
-        console.log("Buchungsdaten:", data);
-
-        // Erfolgsmeldung anzeigen
         const messageEl = document.getElementById("message");
-        messageEl.textContent =
-          "Vielen Dank! Ihre Buchung wurde erfolgreich übermittelt. Sie erhalten in Kürze eine Bestätigungs-E-Mail.";
-        messageEl.className = "message success";
-        messageEl.classList.remove("hidden");
 
-        // Formular ausblenden
-        document.getElementById("bookingForm").classList.add("hidden");
+        try {
+          // API-Call zur Buchung
+          const response = await fetch("/api/booking", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
 
-        // Nach 5 Sekunden zurück zum Kalender
-        setTimeout(() => {
-          messageEl.classList.add("hidden");
-          document.getElementById("bookingCalendar").style.display = "block";
-          e.target.reset();
-        }, 5000);
+          const result = await response.json();
+
+          if (response.ok && result.success) {
+            // Erfolgsmeldung anzeigen
+            messageEl.textContent =
+              "Vielen Dank! Ihre Buchung wurde erfolgreich übermittelt. Sie erhalten in Kürze eine Bestätigungs-E-Mail mit Kalender-Eintrag.";
+            messageEl.className = "message success";
+            messageEl.classList.remove("hidden");
+
+            // Formular ausblenden
+            document.getElementById("bookingForm").classList.add("hidden");
+
+            // Nach 5 Sekunden zurück zum Kalender
+            setTimeout(() => {
+              messageEl.classList.add("hidden");
+              document.getElementById("bookingCalendar").style.display =
+                "block";
+              e.target.reset();
+            }, 5000);
+          } else {
+            throw new Error(result.message || "Buchung fehlgeschlagen");
+          }
+        } catch (error) {
+          console.error("Fehler bei der Buchung:", error);
+          messageEl.textContent =
+            "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut oder kontaktieren Sie uns direkt.";
+          messageEl.className = "message error";
+          messageEl.classList.remove("hidden");
+
+          setTimeout(() => {
+            messageEl.classList.add("hidden");
+          }, 5000);
+        } finally {
+          submitButton.disabled = false;
+          submitButton.textContent = originalButtonText;
+        }
       });
   });
 </script>
