@@ -1,18 +1,1 @@
-[
-  {
-    "date": "2025-11-30",
-    "time": "11:00",
-    "maxCapacity": 10,
-    "available": 10,
-    "id": "slot_1764053410154_ezej1mcg5",
-    "createdAt": "2025-11-25T06:50:10.154Z"
-  },
-  {
-    "date": "2025-11-29",
-    "time": "12:00",
-    "maxCapacity": 15,
-    "available": 12,
-    "id": "slot_1764053593832_50n07ba3t",
-    "createdAt": "2025-11-25T06:53:13.832Z"
-  }
-]
+[]
