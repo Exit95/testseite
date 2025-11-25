@@ -398,6 +398,30 @@ const { title = "Termin buchen" } = Astro.props;
 </style>
 
 <script>
+  // Type definitions
+  interface TimeSlot {
+    date: string;
+    time: string;
+    maxCapacity: number;
+    available: number;
+    id: string;
+  }
+
+  interface BookedSlot {
+    date: string;
+    time: string;
+    booked: number;
+    available: number;
+    maxCapacity: number;
+    isFull: boolean;
+    slotId: string;
+  }
+
+  // Declare BookingCalendar from external script
+  declare class BookingCalendar {
+    constructor(selector: string, options: any);
+  }
+
   // Kalender-Initialisierung nach dem Laden der Seite
   document.addEventListener("DOMContentLoaded", async () => {
     // Prüfen ob BookingCalendar verfügbar ist
@@ -407,7 +431,7 @@ const { title = "Termin buchen" } = Astro.props;
     }
 
     // Lade verfügbare Termine vom Server
-    let availableSlots = [];
+    let availableSlots: TimeSlot[] = [];
     try {
       const response = await fetch('/api/slots');
       if (response.ok) {
@@ -419,7 +443,7 @@ const { title = "Termin buchen" } = Astro.props;
     }
 
     // Konvertiere Slots in das Format, das der Kalender erwartet
-    const bookedSlots = availableSlots.map(slot => ({
+    const bookedSlots: BookedSlot[] = availableSlots.map(slot => ({
       date: slot.date,
       time: slot.time,
       booked: slot.maxCapacity - slot.available,
@@ -445,13 +469,16 @@ const { title = "Termin buchen" } = Astro.props;
       blockedWeekdays: [], // Keine festen Ruhetage mehr
       bookedSlots: bookedSlots,
       maxCapacityPerSlot: 15,
-      onDateSelect: function (date, timeSlot) {
+      onDateSelect: function (date: Date, timeSlot: string) {
         showBookingForm(date, timeSlot);
       },
     });
 
+    // Prevent unused variable warning
+    void calendar;
+
     // Formular-Handler
-    function showBookingForm(date: Date, timeSlot: string) {
+    function showBookingForm(date: Date, timeSlot: string): void {
       const calendarEl = document.getElementById("bookingCalendar");
       const formEl = document.getElementById("bookingForm");
       const selectedDateEl = document.getElementById("selectedDate");
@@ -497,12 +524,14 @@ const { title = "Termin buchen" } = Astro.props;
     });
 
     // Formular-Submit
-    document
-      .getElementById("bookingFormElement")
-      ?.addEventListener("submit", async (e) => {
+    const formElement = document.getElementById("bookingFormElement");
+    if (formElement) {
+      formElement.addEventListener("submit", async (e: Event) => {
         e.preventDefault();
 
         const form = e.target as HTMLFormElement;
+        if (!form) return;
+
         const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement;
         if (!submitButton) return;
 
@@ -511,8 +540,8 @@ const { title = "Termin buchen" } = Astro.props;
         submitButton.textContent = "Wird gesendet...";
 
         const formData = new FormData(form);
-        const selectedDateEl = document.getElementById("selectedDate") as HTMLElement;
-        const selectedTimeEl = document.getElementById("selectedTime") as HTMLElement;
+        const selectedDateEl = document.getElementById("selectedDate") as HTMLElement | null;
+        const selectedTimeEl = document.getElementById("selectedTime") as HTMLElement | null;
 
         const data = {
           date: selectedDateEl?.dataset.isoDate || "",
@@ -527,7 +556,11 @@ const { title = "Termin buchen" } = Astro.props;
         console.log('Buchungsdaten:', data);
 
         const messageEl = document.getElementById("message");
-        if (!messageEl) return;
+        if (!messageEl) {
+          submitButton.disabled = false;
+          submitButton.textContent = originalButtonText;
+          return;
+        }
 
         try {
           // API-Call zur Buchung
@@ -556,7 +589,9 @@ const { title = "Termin buchen" } = Astro.props;
 
             // Nach 5 Sekunden zurück zum Kalender
             setTimeout(() => {
-              messageEl.classList.add("hidden");
+              if (messageEl) {
+                messageEl.classList.add("hidden");
+              }
               const calendarEl = document.getElementById("bookingCalendar");
               if (calendarEl) {
                 calendarEl.style.display = "block";
@@ -568,19 +603,24 @@ const { title = "Termin buchen" } = Astro.props;
           }
         } catch (error) {
           console.error("Fehler bei der Buchung:", error);
-          messageEl.textContent =
-            "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut oder kontaktieren Sie uns direkt.";
-          messageEl.className = "message error";
-          messageEl.classList.remove("hidden");
+          if (messageEl) {
+            messageEl.textContent =
+              "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut oder kontaktieren Sie uns direkt.";
+            messageEl.className = "message error";
+            messageEl.classList.remove("hidden");
 
-          setTimeout(() => {
-            messageEl.classList.add("hidden");
-          }, 5000);
+            setTimeout(() => {
+              if (messageEl) {
+                messageEl.classList.add("hidden");
+              }
+            }, 5000);
+          }
         } finally {
           submitButton.disabled = false;
           submitButton.textContent = originalButtonText;
         }
       });
+    }
   });
 </script>
 
