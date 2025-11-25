@@ -116,36 +116,59 @@ STATUS:CONFIRMED
 END:VEVENT
 END:VCALENDAR`;
 
-    // Nodemailer konfigurieren
-    const transporter = nodemailer.createTransport({
-      host: import.meta.env.SMTP_HOST,
-      port: parseInt(import.meta.env.SMTP_PORT || '587'),
-      secure: false, // true für Port 465, false für andere Ports
-      auth: {
-        user: import.meta.env.SMTP_USER,
-        pass: import.meta.env.SMTP_PASS,
-      },
-    });
+    // E-Mail-Versand (nur wenn SMTP konfiguriert ist)
+    let emailSent = false;
+    let emailError = null;
 
-    // E-Mail senden
-    try {
-      await transporter.sendMail({
-        from: `"Auszeit Keramik" <${fromEmail}>`,
-        to: bookingEmail,
-        subject: emailData.subject,
-        text: emailData.text,
-        html: emailData.html,
-        icalEvent: {
-          filename: 'termin.ics',
-          method: 'REQUEST',
-          content: icalEvent,
-        },
-      });
+    if (import.meta.env.SMTP_HOST && import.meta.env.SMTP_USER && import.meta.env.SMTP_PASS) {
+      try {
+        // Nodemailer konfigurieren
+        const transporter = nodemailer.createTransport({
+          host: import.meta.env.SMTP_HOST,
+          port: parseInt(import.meta.env.SMTP_PORT || '587'),
+          secure: import.meta.env.SMTP_PORT === '465', // true für Port 465, false für andere Ports
+          auth: {
+            user: import.meta.env.SMTP_USER,
+            pass: import.meta.env.SMTP_PASS,
+          },
+          tls: {
+            rejectUnauthorized: false // Für selbstsignierte Zertifikate
+          }
+        });
 
-      console.log('E-Mail erfolgreich gesendet an:', bookingEmail);
-    } catch (emailError) {
-      console.error('Fehler beim E-Mail-Versand:', emailError);
-      // Buchung wurde trotzdem gespeichert, nur E-Mail fehlgeschlagen
+        // Verbindung testen
+        await transporter.verify();
+        console.log('SMTP-Verbindung erfolgreich');
+
+        // E-Mail senden
+        await transporter.sendMail({
+          from: `"Auszeit Keramik" <${fromEmail}>`,
+          to: bookingEmail,
+          subject: emailData.subject,
+          text: emailData.text,
+          html: emailData.html,
+          icalEvent: {
+            filename: 'termin.ics',
+            method: 'REQUEST',
+            content: icalEvent,
+          },
+        });
+
+        emailSent = true;
+        console.log('✅ E-Mail erfolgreich gesendet an:', bookingEmail);
+      } catch (error: any) {
+        emailError = error.message;
+        console.error('❌ Fehler beim E-Mail-Versand:', error);
+        console.error('SMTP Config:', {
+          host: import.meta.env.SMTP_HOST,
+          port: import.meta.env.SMTP_PORT,
+          user: import.meta.env.SMTP_USER,
+          hasPassword: !!import.meta.env.SMTP_PASS
+        });
+      }
+    } else {
+      console.warn('⚠️ SMTP nicht konfiguriert - E-Mail wird nicht gesendet');
+      emailError = 'SMTP nicht konfiguriert';
     }
 
     return new Response(
@@ -153,6 +176,8 @@ END:VCALENDAR`;
         success: true,
         message: 'Buchung erfolgreich erstellt',
         calendarEvent: icalEvent,
+        emailSent: emailSent,
+        emailError: emailError,
       }),
       {
         status: 200,
