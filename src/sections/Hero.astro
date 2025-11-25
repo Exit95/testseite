@@ -1,5 +1,4 @@
 ---
-import LogoLockup from "../components/LogoLockup.astro";
 import Button from "../components/Button.astro";
 import WhatsAppLink from "../components/WhatsAppLink.astro";
 import InstagramLink from "../components/InstagramLink.astro";
@@ -8,8 +7,15 @@ import { content } from "../data/content";
 
 <section class="hero">
   <div class="hero__content">
-    <LogoLockup size="large" />
-    <p class="hero__claim">{content.hero.claim}</p>
+	    <div class="hero__logo-card">
+	      <div class="hero__logo-card-inner">
+	        <img
+		          src="/auszeit2.png"
+	          alt="Auszeit Keramik Malatelier"
+	          class="hero__logo-image"
+	        />
+	      </div>
+	    </div>
     <div class="hero__actions">
       <WhatsAppLink
         phone={content.contact.whatsapp}
@@ -28,21 +34,44 @@ import { content } from "../data/content";
 </section>
 
 <style>
-  .hero {
-    min-height: 50vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(
-      135deg,
-      var(--color-clay-brown) 0%,
-      var(--color-warm-beige) 100%
-    );
-    padding: var(--space-6) var(--gutter);
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
+	  .hero {
+	    display: flex;
+	    align-items: center;
+	    justify-content: center;
+	    background: linear-gradient(
+	      135deg,
+	      var(--color-clay-brown) 0%,
+	      var(--color-warm-beige) 100%
+	    );
+	    padding: var(--space-2) var(--gutter);
+	    text-align: center;
+	    position: relative;
+	    overflow: hidden;
+	  }
+
+	  .hero__logo-card {
+	    display: flex;
+	    justify-content: center;
+	    margin-bottom: var(--space-1);
+	  }
+
+	  .hero__logo-card-inner {
+	    background: transparent;
+	    padding: var(--space-3) var(--space-4);
+	    border-radius: 20px;
+	    box-shadow: none;
+	    border: 0;
+	    max-width: min(440px, 85vw);
+	    backdrop-filter: none;
+	  }
+
+	  .hero__logo-image {
+	    width: 100%;
+	    height: auto;
+	    display: block;
+	    margin: 0 auto;
+	    border-radius: 14px;
+	  }
 
   .hero::before {
     content: "";
@@ -63,8 +92,8 @@ import { content } from "../data/content";
   .hero__claim {
     font-size: 1.125rem;
     color: var(--color-off-white);
-    margin-top: var(--space-4);
-    margin-bottom: var(--space-6);
+	    margin-top: 0;
+	    margin-bottom: var(--space-5);
     font-weight: 500;
     line-height: 1.6;
   }
@@ -77,11 +106,15 @@ import { content } from "../data/content";
   }
 
   /* Sehr kleine Bildschirme (< 375px) */
-  @media (max-width: 374px) {
-    .hero {
-      min-height: 45vh;
-      padding: var(--space-4) var(--gutter);
-    }
+	  @media (max-width: 374px) {
+	    .hero {
+	      padding: var(--space-2) var(--gutter);
+	    }
+
+	    .hero__logo-card-inner {
+	      padding: var(--space-3) var(--space-3);
+	      border-radius: 18px;
+	    }
 
     .hero__claim {
       font-size: 1rem;
@@ -98,11 +131,11 @@ import { content } from "../data/content";
 
   /* Kleine Smartphones (375px - 479px) */
   @media (min-width: 375px) and (max-width: 479px) {
-    .hero__claim {
-      font-size: 1.2rem;
-    }
+	    .hero__claim {
+	      font-size: 1.2rem;
+	    }
 
-    .hero__actions {
+	    .hero__actions {
       width: 100%;
       max-width: 320px;
       margin: 0 auto;
@@ -121,10 +154,7 @@ import { content } from "../data/content";
     }
   }
 
-  @media (min-width: 640px) {
-    .hero {
-      min-height: 55vh;
-    }
+	  @media (min-width: 640px) {
 
     .hero__actions {
       flex-direction: row;
@@ -137,11 +167,7 @@ import { content } from "../data/content";
     }
   }
 
-  @media (min-width: 768px) {
-    .hero {
-      min-height: 60vh;
-    }
-
+	  @media (min-width: 768px) {
     .hero__claim {
       font-size: 1.75rem;
     }

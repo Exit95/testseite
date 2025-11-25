@@ -61,7 +61,7 @@ const url = Astro.site || "https://auszeit-keramik.de";
   </head>
   <body>
     <a href="#main-content" class="skip-link">Zum Hauptinhalt springen</a>
-    <main id="main-content">
+	    <main id="main-content">
       <slot />
     </main>
     <script src="../scripts/scroll-animations.js"></script>
@@ -147,12 +147,12 @@ const url = Astro.site || "https://auszeit-keramik.de";
   </body>
 </html>
 
-<style is:global>
-  @import "../styles/global.css";
-</style>
+	  <style is:global>
+	    @import "../styles/global.css";
+	  </style>
 
-<style>
-  .skip-link {
+	  <style>
+	    .skip-link {
     position: absolute;
     top: -100px;
     left: 0;
