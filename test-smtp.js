@@ -46,6 +46,10 @@ async function testPort(portConfig) {
     },
     debug: true,
     logger: true,
+    // Selbstsigniertes Zertifikat des Mailservers akzeptieren
+    tls: {
+      rejectUnauthorized: false,
+    },
   });
 
   return transporter;
