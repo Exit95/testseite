@@ -33,7 +33,7 @@ export const content = {
   offerings: {
     title: 'Angebot',
     items: [
-      { name: 'Becher & Tassen', price: 'ab 14,50€', image: '/becher.jpeg' },
+      { name: 'Tassen', price: 'ab 14,50€', image: '/becher.jpeg' },
       { name: 'Teller', price: 'ab 12,50€', image: '/teller.jpeg' },
       { name: 'Spardosen & Krüge & Boxen', price: 'ab 8,00€', image: '/spardose.jpeg' },
       { name: 'Weihnachtsanhänger', price: 'ab 6,00€', image: '/anhänger.png' },
