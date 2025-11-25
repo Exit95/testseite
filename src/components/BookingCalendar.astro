@@ -451,11 +451,19 @@ const { title = "Termin buchen" } = Astro.props;
     });
 
     // Formular-Handler
-    function showBookingForm(date, timeSlot) {
-      document.getElementById("bookingCalendar").style.display = "none";
-      document.getElementById("bookingForm").classList.remove("hidden");
-      document.getElementById("selectedDate").textContent = formatDate(date);
-      document.getElementById("selectedTime").textContent = timeSlot;
+    function showBookingForm(date: Date, timeSlot: string) {
+      const calendarEl = document.getElementById("bookingCalendar");
+      const formEl = document.getElementById("bookingForm");
+      const selectedDateEl = document.getElementById("selectedDate");
+      const selectedTimeEl = document.getElementById("selectedTime");
+      const capacityEl = document.getElementById("availableCapacity");
+
+      if (!calendarEl || !formEl || !selectedDateEl || !selectedTimeEl || !capacityEl) return;
+
+      calendarEl.style.display = "none";
+      formEl.classList.remove("hidden");
+      selectedDateEl.textContent = formatDate(date);
+      selectedTimeEl.textContent = timeSlot;
 
       // Datum im ISO-Format speichern (für API)
       const year = date.getFullYear();
@@ -464,13 +472,13 @@ const { title = "Termin buchen" } = Astro.props;
       const isoDate = `${year}-${month}-${day}`;
 
       // Versteckte Felder für API-Daten
-      document.getElementById("selectedDate").dataset.isoDate = isoDate;
-      document.getElementById("selectedTime").dataset.time = timeSlot;
+      selectedDateEl.dataset.isoDate = isoDate;
+      selectedTimeEl.dataset.time = timeSlot;
 
-      document.getElementById("availableCapacity").textContent = "15"; // Beispielwert
+      capacityEl.textContent = "15"; // Beispielwert
     }
 
-    function formatDate(date) {
+    function formatDate(date: Date): string {
       return date.toLocaleDateString("de-DE", {
         weekday: "long",
         year: "numeric",
@@ -481,8 +489,11 @@ const { title = "Termin buchen" } = Astro.props;
 
     // Zurück-Button
     document.getElementById("backToCalendar")?.addEventListener("click", () => {
-      document.getElementById("bookingForm").classList.add("hidden");
-      document.getElementById("bookingCalendar").style.display = "block";
+      const formEl = document.getElementById("bookingForm");
+      const calendarEl = document.getElementById("bookingCalendar");
+
+      if (formEl) formEl.classList.add("hidden");
+      if (calendarEl) calendarEl.style.display = "block";
     });
 
     // Formular-Submit
@@ -491,25 +502,32 @@ const { title = "Termin buchen" } = Astro.props;
       ?.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const submitButton = e.target.querySelector('button[type="submit"]');
-        const originalButtonText = submitButton.textContent;
+        const form = e.target as HTMLFormElement;
+        const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+        if (!submitButton) return;
+
+        const originalButtonText = submitButton.textContent || "Verbindlich buchen";
         submitButton.disabled = true;
         submitButton.textContent = "Wird gesendet...";
 
-        const formData = new FormData(e.target);
+        const formData = new FormData(form);
+        const selectedDateEl = document.getElementById("selectedDate") as HTMLElement;
+        const selectedTimeEl = document.getElementById("selectedTime") as HTMLElement;
+
         const data = {
-          date: document.getElementById("selectedDate").dataset.isoDate,
-          time: document.getElementById("selectedTime").dataset.time,
-          name: formData.get("name"),
-          email: formData.get("email"),
-          phone: formData.get("phone"),
-          participants: formData.get("participants"),
-          notes: formData.get("notes"),
+          date: selectedDateEl?.dataset.isoDate || "",
+          time: selectedTimeEl?.dataset.time || "",
+          name: formData.get("name") as string,
+          email: formData.get("email") as string,
+          phone: formData.get("phone") as string,
+          participants: formData.get("participants") as string,
+          notes: formData.get("notes") as string,
         };
 
         console.log('Buchungsdaten:', data);
 
         const messageEl = document.getElementById("message");
+        if (!messageEl) return;
 
         try {
           // API-Call zur Buchung
@@ -531,14 +549,19 @@ const { title = "Termin buchen" } = Astro.props;
             messageEl.classList.remove("hidden");
 
             // Formular ausblenden
-            document.getElementById("bookingForm").classList.add("hidden");
+            const bookingFormEl = document.getElementById("bookingForm");
+            if (bookingFormEl) {
+              bookingFormEl.classList.add("hidden");
+            }
 
             // Nach 5 Sekunden zurück zum Kalender
             setTimeout(() => {
               messageEl.classList.add("hidden");
-              document.getElementById("bookingCalendar").style.display =
-                "block";
-              e.target.reset();
+              const calendarEl = document.getElementById("bookingCalendar");
+              if (calendarEl) {
+                calendarEl.style.display = "block";
+              }
+              form.reset();
             }, 5000);
           } else {
             throw new Error(result.message || "Buchung fehlgeschlagen");
