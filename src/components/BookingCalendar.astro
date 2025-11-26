@@ -135,24 +135,19 @@ const { title = "Termin buchen" } = Astro.props;
     font-size: 2rem;
   }
 
-  .booking-grid {
-    display: grid;
-    gap: var(--space-8);
-    grid-template-columns: 1fr;
-    position: relative;
-  }
+	  .booking-grid {
+	    display: grid;
+	    gap: var(--space-8);
+	    grid-template-columns: 1fr;
+	    position: relative;
+	  }
 
-  @media (min-width: 1024px) {
-    .booking-grid {
-      grid-template-columns: 1fr 380px;
-      align-items: start;
-    }
-  }
-
-  /* Verstecke Profil wenn Formular angezeigt wird */
-  .booking-grid:has(.booking-form:not(.hidden)) .profile-card {
-    display: none;
-  }
+	  @media (min-width: 1024px) {
+	    .booking-grid {
+	      grid-template-columns: 1fr 380px;
+	      align-items: start;
+	    }
+	  }
 
   .booking-calendar {
     background: var(--color-off-white);
@@ -170,6 +165,13 @@ const { title = "Termin buchen" } = Astro.props;
     position: sticky;
     top: var(--space-6);
   }
+
+	  /* Profil während des Buchungsvorgangs auf kleineren Bildschirmen ausblenden */
+	  @media (max-width: 1023px) {
+	    .profile-card--hide-during-booking {
+	      display: none;
+	    }
+	  }
 
   .profile-card__image {
     width: 100%;
@@ -479,16 +481,22 @@ const { title = "Termin buchen" } = Astro.props;
     // Prevent unused variable warning
     void calendar;
 
-    // Formular-Handler
-    function showBookingForm(date: Date, timeSlot: string): void {
-      const formEl = document.getElementById("bookingForm");
-      const selectedDateEl = document.getElementById("selectedDate");
-      const selectedTimeEl = document.getElementById("selectedTime");
-      const capacityEl = document.getElementById("availableCapacity");
+	    // Formular-Handler
+	    function showBookingForm(date: Date, timeSlot: string): void {
+	      const formEl = document.getElementById("bookingForm");
+	      const selectedDateEl = document.getElementById("selectedDate");
+	      const selectedTimeEl = document.getElementById("selectedTime");
+	      const capacityEl = document.getElementById("availableCapacity");
 
-      if (!formEl || !selectedDateEl || !selectedTimeEl || !capacityEl) return;
+	      if (!formEl || !selectedDateEl || !selectedTimeEl || !capacityEl) return;
 
-      // Zeige nur das Formular, Kalender bleibt sichtbar
+	      // Profilkarte für den Buchungsvorgang auf mobilen Geräten ausblenden
+	      const profileCard = document.querySelector(".profile-card");
+	      if (profileCard) {
+	        profileCard.classList.add("profile-card--hide-during-booking");
+	      }
+
+	      // Zeige nur das Formular, Kalender bleibt sichtbar
       formEl.classList.remove("hidden");
       selectedDateEl.textContent = formatDate(date);
       selectedTimeEl.textContent = timeSlot;
@@ -534,12 +542,18 @@ const { title = "Termin buchen" } = Astro.props;
       });
     }
 
-    // Zurück-Button
-    document.getElementById("backToCalendar")?.addEventListener("click", () => {
-      const formEl = document.getElementById("bookingForm");
+	    // Zurück-Button
+	    document.getElementById("backToCalendar")?.addEventListener("click", () => {
+	      const formEl = document.getElementById("bookingForm");
 
-      if (formEl) formEl.classList.add("hidden");
-    });
+	      if (formEl) formEl.classList.add("hidden");
+
+	      // Profilkarte wieder einblenden, wenn der Buchungsvorgang abgebrochen wird
+	      const profileCard = document.querySelector(".profile-card");
+	      if (profileCard) {
+	        profileCard.classList.remove("profile-card--hide-during-booking");
+	      }
+	    });
 
     // Formular-Submit
     const formElement = document.getElementById("bookingFormElement");
