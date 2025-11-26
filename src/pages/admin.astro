@@ -36,46 +36,53 @@ export const prerender = false;
       <button id="logout-btn" class="btn btn-secondary">Abmelden</button>
     </header>
 
-    <main class="admin-main">
-	      <section class="add-slot-section">
-	        <h2 id="slot-form-title">Neuen Termin hinzufügen</h2>
-	        <form id="add-slot-form">
-	          <div class="form-row">
-	            <div class="form-group">
-	              <label for="slot-date">Datum</label>
-	              <input type="date" id="slot-date" name="date" required>
-	            </div>
-	            <div class="form-group">
-	              <label for="slot-start-time">Beginn</label>
-	              <input type="time" id="slot-start-time" name="startTime" required>
-	            </div>
-	            <div class="form-group">
-	              <label for="slot-end-time">Ende</label>
-	              <input type="time" id="slot-end-time" name="endTime" required>
-	            </div>
-	            <div class="form-group">
-	              <label for="slot-capacity">Max. Personen</label>
-	              <input type="number" id="slot-capacity" name="maxCapacity" min="1" max="20" value="15" required>
-	            </div>
-	            <div class="form-group">
-	              <label for="slot-initial-booked">Bereits gebuchte Plätze</label>
-	              <input type="number" id="slot-initial-booked" name="initialBooked" min="0" max="20" value="0">
-	            </div>
-	          </div>
-	          <div class="form-actions">
-	            <button type="submit" class="btn btn-primary" id="slot-submit-btn">Termin hinzufügen</button>
-	            <button type="button" class="btn btn-secondary hidden" id="cancel-edit-btn">Bearbeitung abbrechen</button>
-	          </div>
-	        </form>
+	    <main class="admin-main">
+		      <section class="add-slot-section">
+		        <h2 id="slot-form-title">Neuen Termin hinzufügen</h2>
+		        <form id="add-slot-form">
+		          <div class="form-row">
+		            <div class="form-group">
+		              <label for="slot-date">Datum</label>
+		              <input type="date" id="slot-date" name="date" required>
+		            </div>
+		            <div class="form-group">
+		              <label for="slot-start-time">Beginn</label>
+		              <input type="time" id="slot-start-time" name="startTime" required>
+		            </div>
+		            <div class="form-group">
+		              <label for="slot-end-time">Ende</label>
+		              <input type="time" id="slot-end-time" name="endTime" required>
+		            </div>
+		            <div class="form-group">
+		              <label for="slot-capacity">Max. Personen</label>
+		              <input type="number" id="slot-capacity" name="maxCapacity" min="1" max="20" value="15" required>
+		            </div>
+		            <div class="form-group">
+		              <label for="slot-initial-booked">Bereits gebuchte Plätze</label>
+		              <input type="number" id="slot-initial-booked" name="initialBooked" min="0" max="20" value="0">
+		            </div>
+		          </div>
+		          <div class="form-actions">
+		            <button type="submit" class="btn btn-primary" id="slot-submit-btn">Termin hinzufügen</button>
+		            <button type="button" class="btn btn-secondary hidden" id="cancel-edit-btn">Bearbeitung abbrechen</button>
+		          </div>
+		        </form>
+		      </section>
+
+	      <section class="slots-section">
+	        <h2>Verfügbare Termine</h2>
+	        <div id="slots-loading" class="loading">Lade Termine...</div>
+	        <div id="slots-list" class="slots-list hidden"></div>
+	        <div id="no-slots" class="no-data hidden">Keine Termine vorhanden</div>
 	      </section>
 
-      <section class="slots-section">
-        <h2>Verfügbare Termine</h2>
-        <div id="slots-loading" class="loading">Lade Termine...</div>
-        <div id="slots-list" class="slots-list hidden"></div>
-        <div id="no-slots" class="no-data hidden">Keine Termine vorhanden</div>
-      </section>
-    </main>
+	      <section class="bookings-section">
+	        <h2>Buchungen</h2>
+	        <div id="bookings-loading" class="loading">Lade Buchungen...</div>
+	        <div id="bookings-list" class="slots-list hidden"></div>
+	        <div id="no-bookings" class="no-data hidden">Keine Buchungen vorhanden</div>
+	      </section>
+	    </main>
   </div>
 
 	  <script>
@@ -101,7 +108,8 @@ export const prerender = false;
         if (response.ok) {
           document.getElementById('login-screen')?.classList.add('hidden');
           document.getElementById('admin-panel')?.classList.remove('hidden');
-          loadSlots();
+	          loadSlots();
+	          loadBookings();
         } else {
           const errorEl = document.getElementById('login-error');
           if (errorEl) {
@@ -267,6 +275,95 @@ export const prerender = false;
       }
     }
 
+	    // Buchungen laden
+	    async function loadBookings() {
+	      const loadingEl = document.getElementById('bookings-loading');
+	      const listEl = document.getElementById('bookings-list');
+	      const noBookingsEl = document.getElementById('no-bookings');
+
+	      if (loadingEl) loadingEl.classList.remove('hidden');
+	      if (listEl) listEl.classList.add('hidden');
+	      if (noBookingsEl) noBookingsEl.classList.add('hidden');
+
+	      try {
+	        const response = await fetch('/api/admin/bookings', {
+	          headers: {
+	            'Authorization': `Basic ${authCredentials}`,
+	          },
+	        });
+
+	        if (!response.ok) throw new Error('Failed to load bookings');
+
+	        const bookings = await response.json();
+
+	        if (loadingEl) loadingEl.classList.add('hidden');
+
+	        // Nur wirklich gesetzte, zukünftige Buchungen anzeigen
+	        const today = new Date();
+	        today.setHours(0, 0, 0, 0);
+
+	        const activeBookings = (bookings as any[]).filter((b) => {
+	          if (b.status === 'cancelled') return false;
+	          if (!b.slotDate) return false;
+	          const slotDate = new Date(b.slotDate + 'T00:00:00');
+	          return slotDate >= today;
+	        });
+
+	        if (activeBookings.length === 0) {
+	          if (noBookingsEl) noBookingsEl.classList.remove('hidden');
+	          return;
+	        }
+
+	        if (listEl) {
+	          listEl.innerHTML = activeBookings
+	            .map((booking: any) => {
+	              const dateLabel = booking.slotDate
+	                ? formatDate(booking.slotDate)
+	                : 'Kein Datum';
+	              const timeLabel = booking.slotTime
+	                ? `${booking.slotTime}${booking.slotEndTime ? ' - ' + booking.slotEndTime : ''} Uhr`
+	                : '';
+
+	              return `
+	                <div class="slot-card booking-card" data-id="${booking.id}">
+	                  <div class="slot-info">
+	                    <div>
+	                      <div class="slot-date">${dateLabel}</div>
+	                      <div class="slot-time">${timeLabel}</div>
+	                    </div>
+	                    <div>
+	                      <div><strong>${booking.name}</strong></div>
+	                      <div>${booking.participants} Person(en)</div>
+	                    </div>
+	                  </div>
+	                  <div class="slot-actions">
+	                    <button class="btn btn-danger btn-cancel-booking" data-id="${booking.id}">
+	                      Buchung stornieren
+	                    </button>
+	                  </div>
+	                </div>
+	              `;
+	            })
+	            .join('');
+
+	          listEl.classList.remove('hidden');
+
+	          // Cancel-Handler
+	          listEl.querySelectorAll('.btn-cancel-booking').forEach((btn) => {
+	            btn.addEventListener('click', async (e) => {
+	              const id = (e.target as HTMLElement).dataset.id;
+	              if (id && confirm('Buchung wirklich stornieren?')) {
+	                await cancelBookingAdmin(id);
+	              }
+	            });
+	          });
+	        }
+	      } catch (error) {
+	        console.error('Error loading bookings:', error);
+	        if (loadingEl) loadingEl.classList.add('hidden');
+	      }
+	    }
+
     // Termin löschen
     async function deleteSlot(id: string) {
       try {
@@ -288,6 +385,31 @@ export const prerender = false;
         console.error('Error deleting slot:', error);
       }
     }
+
+	    // Buchung stornieren
+	    async function cancelBookingAdmin(id: string) {
+	      try {
+	        const response = await fetch('/api/admin/bookings', {
+	          method: 'POST',
+	          headers: {
+	            'Authorization': `Basic ${authCredentials}`,
+	            'Content-Type': 'application/json',
+	          },
+	          body: JSON.stringify({ id }),
+	        });
+
+	        if (response.ok) {
+	          // Buchungen neu laden und Slots aktualisieren, damit Plätze wieder sichtbar sind
+	          await loadBookings();
+	          await loadSlots();
+	        } else {
+	          alert('Fehler beim Stornieren der Buchung');
+	        }
+	      } catch (error) {
+	        console.error('Error cancelling booking:', error);
+	        alert('Fehler beim Stornieren der Buchung');
+	      }
+	    }
 
 	    // Formular in Bearbeitungsmodus versetzen
 	    function startEditSlot(slot: any) {
