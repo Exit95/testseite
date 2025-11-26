@@ -6,12 +6,13 @@ const SLOTS_FILE = path.join(DATA_DIR, 'time-slots.json');
 const BOOKINGS_FILE = path.join(DATA_DIR, 'bookings.json');
 
 export interface TimeSlot {
-  id: string;
-  date: string; // YYYY-MM-DD
-  time: string; // HH:MM
-  maxCapacity: number;
-  available: number;
-  createdAt: string;
+	id: string;
+	date: string; // YYYY-MM-DD
+	time: string; // HH:MM (Startzeit)
+	endTime?: string; // HH:MM (Endzeit, optional)
+	maxCapacity: number;
+	available: number;
+	createdAt: string;
 }
 
 export interface Booking {

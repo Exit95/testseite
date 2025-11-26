@@ -45,14 +45,18 @@ export const prerender = false;
               <label for="slot-date">Datum</label>
               <input type="date" id="slot-date" name="date" required>
             </div>
-            <div class="form-group">
-              <label for="slot-time">Uhrzeit</label>
-              <input type="time" id="slot-time" name="time" required>
-            </div>
-            <div class="form-group">
-              <label for="slot-capacity">Max. Personen</label>
-              <input type="number" id="slot-capacity" name="maxCapacity" min="1" max="20" value="15" required>
-            </div>
+	            <div class="form-group">
+	              <label for="slot-start-time">Beginn</label>
+	              <input type="time" id="slot-start-time" name="startTime" required>
+	            </div>
+	            <div class="form-group">
+	              <label for="slot-end-time">Ende</label>
+	              <input type="time" id="slot-end-time" name="endTime" required>
+	            </div>
+	            <div class="form-group">
+	              <label for="slot-capacity">Max. Personen</label>
+	              <input type="number" id="slot-capacity" name="maxCapacity" min="1" max="20" value="15" required>
+	            </div>
           </div>
           <button type="submit" class="btn btn-primary">Termin hinzufügen</button>
         </form>
@@ -115,9 +119,10 @@ export const prerender = false;
       e.preventDefault();
       const formData = new FormData(e.target as HTMLFormElement);
       const data = {
-        date: formData.get('date'),
-        time: formData.get('time'),
-        maxCapacity: formData.get('maxCapacity')
+	        date: formData.get('date'),
+	        startTime: formData.get('startTime'),
+	        endTime: formData.get('endTime'),
+	        maxCapacity: formData.get('maxCapacity')
       };
 
       try {
@@ -175,7 +180,7 @@ export const prerender = false;
             <div class="slot-card" data-id="${slot.id}">
               <div class="slot-info">
                 <div class="slot-date">${formatDate(slot.date)}</div>
-                <div class="slot-time">${slot.time} Uhr</div>
+	                <div class="slot-time">${slot.time}${slot.endTime ? ' - ' + slot.endTime : ''} Uhr</div>
                 <div class="slot-capacity">
                   ${slot.available} / ${slot.maxCapacity} Plätze frei
                 </div>

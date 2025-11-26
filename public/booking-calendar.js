@@ -180,7 +180,8 @@ class BookingCalendar {
             // Zeitslot-Inhalt mit Kapazitätsanzeige
             const timeText = document.createElement('div');
             timeText.className = 'time-slot-time';
-            timeText.textContent = slot.time;
+	            const label = slot.endTime ? `${slot.time} - ${slot.endTime} Uhr` : `${slot.time} Uhr`;
+	            timeText.textContent = label;
             slotElement.appendChild(timeText);
 
             // Kapazitätsanzeige hinzufügen
@@ -198,7 +199,7 @@ class BookingCalendar {
                 slotElement.appendChild(capacityText);
             }
 
-            if (slot.booked || (slot.capacity && slot.capacity.available === 0)) {
+	            if (slot.booked || (slot.capacity && slot.capacity.available === 0)) {
                 slotElement.classList.add('booked');
                 slotElement.title = 'Ausgebucht';
             } else if (slot.disabled) {
@@ -220,15 +221,15 @@ class BookingCalendar {
             return slots;
         }
 
-        const selectedDateStr = this.formatDateToString(this.selectedDate);
+	        const selectedDateStr = this.formatDateToString(this.selectedDate);
 
         // Filtere Slots für das ausgewählte Datum
         const slotsForDate = this.config.bookedSlots.filter(slot => {
             return slot.date === selectedDateStr;
         });
 
-        // Konvertiere in das erwartete Format
-        slotsForDate.forEach(slot => {
+	        // Konvertiere in das erwartete Format
+	        slotsForDate.forEach(slot => {
             const key = `${slot.date}|${slot.time}`;
             const capacity = this.slotsCapacity[key] || {
                 available: slot.available || 0,
@@ -236,13 +237,14 @@ class BookingCalendar {
                 booked: slot.booked || 0
             };
 
-            slots.push({
-                time: slot.time,
-                booked: capacity.available === 0,
-                disabled: false,
-                capacity: capacity,
-                slotId: slot.slotId
-            });
+	            slots.push({
+	                time: slot.time,
+	                endTime: slot.endTime,
+	                booked: capacity.available === 0,
+	                disabled: false,
+	                capacity: capacity,
+	                slotId: slot.slotId
+	            });
         });
 
         // Sortiere nach Zeit

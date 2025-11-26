@@ -50,10 +50,13 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   try {
-    const data = await request.json();
-    const { date, time, maxCapacity } = data;
+		const data = await request.json();
+		const { date, time, startTime, endTime, maxCapacity } = data as any;
 
-    if (!date || !time || !maxCapacity) {
+		// Unterstützt sowohl altes Format (time) als auch neues Format (startTime/endTime)
+		const slotTime = startTime || time;
+
+		if (!date || !slotTime || !maxCapacity) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
@@ -61,10 +64,11 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const newSlot = await addTimeSlot({
-      date,
-      time,
-      maxCapacity: parseInt(maxCapacity),
-      available: parseInt(maxCapacity),
+		  date,
+		  time: slotTime,
+		  endTime: endTime || undefined,
+		  maxCapacity: parseInt(maxCapacity, 10),
+		  available: parseInt(maxCapacity, 10),
     });
 
     return new Response(JSON.stringify(newSlot), {

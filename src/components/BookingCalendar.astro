@@ -399,22 +399,24 @@ const { title = "Termin buchen" } = Astro.props;
 <script>
   // Type definitions
   interface TimeSlot {
-    date: string;
-    time: string;
-    maxCapacity: number;
-    available: number;
-    id: string;
-  }
+	    date: string;
+	    time: string;
+	    endTime?: string;
+	    maxCapacity: number;
+	    available: number;
+	    id: string;
+	  }
 
-  interface BookedSlot {
-    date: string;
-    time: string;
-    booked: number;
-    available: number;
-    maxCapacity: number;
-    isFull: boolean;
-    slotId: string;
-  }
+	  interface BookedSlot {
+	    date: string;
+	    time: string;
+	    endTime?: string;
+	    booked: number;
+	    available: number;
+	    maxCapacity: number;
+	    isFull: boolean;
+	    slotId: string;
+	  }
 
   // Declare BookingCalendar from external script
   declare class BookingCalendar {
@@ -442,15 +444,16 @@ const { title = "Termin buchen" } = Astro.props;
     }
 
     // Konvertiere Slots in das Format, das der Kalender erwartet
-    const bookedSlots: BookedSlot[] = availableSlots.map(slot => ({
-      date: slot.date,
-      time: slot.time,
-      booked: slot.maxCapacity - slot.available,
-      available: slot.available,
-      maxCapacity: slot.maxCapacity,
-      isFull: slot.available === 0,
-      slotId: slot.id
-    }));
+	    const bookedSlots: BookedSlot[] = availableSlots.map(slot => ({
+	      date: slot.date,
+	      time: slot.time,
+	      endTime: slot.endTime,
+	      booked: slot.maxCapacity - slot.available,
+	      available: slot.available,
+	      maxCapacity: slot.maxCapacity,
+	      isFull: slot.available === 0,
+	      slotId: slot.id
+	    }));
 
     // Kalender initialisieren
     const calendar = new BookingCalendar("#bookingCalendar", {
@@ -504,10 +507,17 @@ const { title = "Termin buchen" } = Astro.props;
       fetch(`/api/slots?date=${isoDate}`)
         .then(res => res.json())
         .then(slots => {
-          const slot = slots.find((s: any) => s.date === isoDate && s.time === timeSlot);
-          if (slot && capacityEl) {
-            capacityEl.textContent = String(slot.available);
-          }
+	          const slot = slots.find((s: any) => s.date === isoDate && s.time === timeSlot);
+	          if (slot) {
+	            if (capacityEl) {
+	              capacityEl.textContent = String(slot.available);
+	            }
+	            if (selectedTimeEl) {
+	              selectedTimeEl.textContent = slot.endTime
+	                ? `${slot.time} - ${slot.endTime} Uhr`
+	                : `${slot.time} Uhr`;
+	            }
+	          }
         })
         .catch(err => {
           console.error('Fehler beim Laden der Kapazität:', err);

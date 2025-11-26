@@ -3,14 +3,14 @@ import nodemailer from 'nodemailer';
 import { getTimeSlots, addBooking } from '../../lib/storage';
 
 export const POST: APIRoute = async ({ request }) => {
-  try {
-    const data = await request.json();
-    const { name, email, phone, participants, date, time, notes } = data;
+	  try {
+	    const data = await request.json();
+	    const { name, email, phone, participants, date, time, notes } = data;
 
-    // Finde den passenden Slot
-    const slots = await getTimeSlots();
-    const dateStr = new Date(date).toISOString().split('T')[0];
-    const slot = slots.find(s => s.date === dateStr && s.time === time);
+	    // Finde den passenden Slot
+	    const slots = await getTimeSlots();
+	    const dateStr = new Date(date).toISOString().split('T')[0];
+	    const slot = slots.find(s => s.date === dateStr && s.time === time);
 
     if (!slot) {
       return new Response(
@@ -25,7 +25,7 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    if (slot.available < parseInt(participants)) {
+	    if (slot.available < parseInt(participants, 10)) {
       return new Response(
         JSON.stringify({
           success: false,
@@ -38,15 +38,15 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // Buchung speichern
-    const booking = await addBooking({
-      slotId: slot.id,
-      name,
-      email,
-      phone: phone || '',
-      participants: parseInt(participants),
-      notes: notes || '',
-    });
+	    // Buchung speichern
+	    const booking = await addBooking({
+	      slotId: slot.id,
+	      name,
+	      email,
+	      phone: phone || '',
+	      participants: parseInt(participants, 10),
+	      notes: notes || '',
+	    });
 
     if (!booking) {
       return new Response(
@@ -61,23 +61,26 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-	    // E-Mail-Adressen aus Environment-Variablen
-	    const bookingEmail = import.meta.env.BOOKING_EMAIL || 'keramik-auszeit@web.de';
-	    const fromEmail = import.meta.env.FROM_EMAIL || 'buchungen@auszeit-keramik.de';
+		    // E-Mail-Adressen aus Environment-Variablen
+		    const bookingEmail = import.meta.env.BOOKING_EMAIL || 'keramik-auszeit@web.de';
+		    const fromEmail = import.meta.env.FROM_EMAIL || 'buchungen@auszeit-keramik.de';
 
-    // E-Mail-Benachrichtigung für Admin vorbereiten
-    const adminEmailData = {
-      to: bookingEmail,
-      from: fromEmail,
-      subject: `Neue Buchung: ${name} - ${date} ${time}`,
+	    // Anzeigeformat für die Uhrzeit (mit optionaler Endzeit)
+	    const timeDisplay = slot.endTime ? `${slot.time} - ${slot.endTime}` : slot.time;
+
+	    // E-Mail-Benachrichtigung für Admin vorbereiten
+	    const adminEmailData = {
+	      to: bookingEmail,
+	      from: fromEmail,
+	      subject: `Neue Buchung: ${name} - ${date} ${timeDisplay} Uhr`,
       html: `
         <h2>Neue Buchungsanfrage</h2>
         <p><strong>Name:</strong> ${name}</p>
         <p><strong>E-Mail:</strong> ${email}</p>
         <p><strong>Telefon:</strong> ${phone || 'Nicht angegeben'}</p>
         <p><strong>Anzahl Personen:</strong> ${participants}</p>
-        <p><strong>Datum:</strong> ${date}</p>
-        <p><strong>Uhrzeit:</strong> ${time}</p>
+	        <p><strong>Datum:</strong> ${date}</p>
+	        <p><strong>Uhrzeit:</strong> ${timeDisplay} Uhr</p>
         <p><strong>Notizen:</strong> ${notes || 'Keine'}</p>
       `,
       text: `
@@ -87,17 +90,17 @@ Name: ${name}
 E-Mail: ${email}
 Telefon: ${phone || 'Nicht angegeben'}
 Anzahl Personen: ${participants}
-Datum: ${date}
-Uhrzeit: ${time}
+	  Datum: ${date}
+	  Uhrzeit: ${timeDisplay} Uhr
 Notizen: ${notes || 'Keine'}
       `
     };
 
-    // Bestätigungs-E-Mail für Kunden vorbereiten
-    const customerEmailData = {
+	    // Bestätigungs-E-Mail für Kunden vorbereiten
+	    const customerEmailData = {
       to: email,
       from: fromEmail,
-      subject: `Buchungsbestätigung - Atelier Auszeit am ${date} um ${time}`,
+	      subject: `Buchungsbestätigung - Atelier Auszeit am ${date} um ${timeDisplay} Uhr`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #8B6F47;">Vielen Dank für Ihre Buchung!</h2>
@@ -105,9 +108,9 @@ Notizen: ${notes || 'Keine'}
           <p>Ihre Buchung wurde erfolgreich bestätigt. Wir freuen uns auf Ihren Besuch!</p>
 
           <div style="background-color: #F5F0E8; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #8B6F47; margin-top: 0;">Ihre Buchungsdetails:</h3>
-            <p><strong>Datum:</strong> ${date}</p>
-            <p><strong>Uhrzeit:</strong> ${time}</p>
+	            <h3 style="color: #8B6F47; margin-top: 0;">Ihre Buchungsdetails:</h3>
+	            <p><strong>Datum:</strong> ${date}</p>
+	            <p><strong>Uhrzeit:</strong> ${timeDisplay} Uhr</p>
             <p><strong>Anzahl Personen:</strong> ${participants}</p>
             ${notes ? `<p><strong>Ihre Notizen:</strong> ${notes}</p>` : ''}
           </div>
@@ -142,8 +145,8 @@ Liebe/r ${name},
 Ihre Buchung wurde erfolgreich bestätigt. Wir freuen uns auf Ihren Besuch!
 
 IHRE BUCHUNGSDETAILS:
-Datum: ${date}
-Uhrzeit: ${time}
+	  Datum: ${date}
+	  Uhrzeit: ${timeDisplay} Uhr
 Anzahl Personen: ${participants}
 ${notes ? `Ihre Notizen: ${notes}` : ''}
 
@@ -164,9 +167,11 @@ Atelier Auszeit
       `
     };
 
-    // Kalender-Event erstellen (iCal Format)
-    const eventDate = new Date(`${date} ${time}`);
-    const endDate = new Date(eventDate.getTime() + 2 * 60 * 60 * 1000); // 2 Stunden später
+	    // Kalender-Event erstellen (iCal Format)
+	    const eventDate = new Date(`${slot.date}T${slot.time}:00`);
+	    const endDate = slot.endTime
+	      ? new Date(`${slot.date}T${slot.endTime}:00`)
+	      : new Date(eventDate.getTime() + 2 * 60 * 60 * 1000); // Fallback: 2 Stunden später
     
     const formatDate = (date: Date) => {
       return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
