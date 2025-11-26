@@ -146,41 +146,95 @@ export const DELETE: APIRoute = async ({ request }) => {
 
 // PUT - Zeitslot aktualisieren
 export const PUT: APIRoute = async ({ request }) => {
-  if (!checkAuth(request)) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
+	  if (!checkAuth(request)) {
+	    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+	      status: 401,
+	      headers: { 'Content-Type': 'application/json' }
+	    });
+	  }
 
-  try {
-    const { id, ...updates } = await request.json();
+	  try {
+	    const body = await request.json();
+	    const { id, date, time, startTime, endTime, maxCapacity } = body as any;
 
-    if (!id) {
-      return new Response(JSON.stringify({ error: 'Missing slot ID' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+	    if (!id) {
+	      return new Response(JSON.stringify({ error: 'Missing slot ID' }), {
+	        status: 400,
+	        headers: { 'Content-Type': 'application/json' }
+	      });
+	    }
 
-    const updatedSlot = await updateTimeSlot(id, updates);
+	    // Aktuellen Slot laden, um bestehende Buchungen zu berücksichtigen
+	    const allSlots = await getTimeSlots();
+	    const existing = allSlots.find((s) => s.id === id);
+	    if (!existing) {
+	      return new Response(JSON.stringify({ error: 'Slot not found' }), {
+	        status: 404,
+	        headers: { 'Content-Type': 'application/json' }
+	      });
+	    }
 
-    if (!updatedSlot) {
-      return new Response(JSON.stringify({ error: 'Slot not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+	    const updates: Partial<TimeSlot> = {};
 
-    return new Response(JSON.stringify(updatedSlot), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to update slot' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
+	    if (date) {
+	      updates.date = date;
+	    }
+
+	    // Unterstützt sowohl altes "time" als auch neues "startTime"
+	    const newTime = startTime || time;
+	    if (newTime) {
+	      updates.time = newTime;
+	    }
+
+	    if (typeof endTime !== 'undefined') {
+	      updates.endTime = endTime || undefined;
+	    }
+
+	    if (typeof maxCapacity !== 'undefined' && maxCapacity !== null) {
+	      const newMax = parseInt(String(maxCapacity), 10);
+	      if (Number.isNaN(newMax) || newMax <= 0) {
+	        return new Response(JSON.stringify({ error: 'Invalid maxCapacity' }), {
+	          status: 400,
+	          headers: { 'Content-Type': 'application/json' }
+	        });
+	      }
+
+	      const alreadyBooked = existing.maxCapacity - existing.available;
+	      if (newMax < alreadyBooked) {
+	        return new Response(
+	          JSON.stringify({
+	            error:
+	              'Neue maximale Teilnehmerzahl darf bestehende Buchungen nicht unterschreiten.',
+	          }),
+	          {
+	            status: 400,
+	            headers: { 'Content-Type': 'application/json' },
+	          },
+	        );
+	      }
+
+	      updates.maxCapacity = newMax;
+	      updates.available = newMax - alreadyBooked;
+	    }
+
+	    const updatedSlot = await updateTimeSlot(id, updates);
+
+	    if (!updatedSlot) {
+	      return new Response(JSON.stringify({ error: 'Slot not found' }), {
+	        status: 404,
+	        headers: { 'Content-Type': 'application/json' }
+	      });
+	    }
+
+	    return new Response(JSON.stringify(updatedSlot), {
+	      status: 200,
+	      headers: { 'Content-Type': 'application/json' }
+	    });
+	  } catch (error) {
+	    return new Response(JSON.stringify({ error: 'Failed to update slot' }), {
+	      status: 500,
+	      headers: { 'Content-Type': 'application/json' }
+	    });
+	  }
 };
 
