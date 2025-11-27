@@ -102,57 +102,57 @@ Notizen: ${notes || 'Keine'}
       `
     };
 
-	    // Bestätigungs-E-Mail für Kunden vorbereiten
-	    const customerEmailData = {
-      to: email,
-      from: fromEmail,
-	      subject: `Buchungsbestätigung - Atelier Auszeit am ${date} um ${timeDisplay} Uhr`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #8B6F47;">Vielen Dank für Ihre Buchung!</h2>
-          <p>Liebe/r ${name},</p>
-          <p>Ihre Buchung wurde erfolgreich bestätigt. Wir freuen uns auf Ihren Besuch!</p>
-
-          <div style="background-color: #F5F0E8; padding: 20px; border-radius: 8px; margin: 20px 0;">
-	            <h3 style="color: #8B6F47; margin-top: 0;">Ihre Buchungsdetails:</h3>
-	            <p><strong>Datum:</strong> ${date}</p>
-	            <p><strong>Uhrzeit:</strong> ${timeDisplay} Uhr</p>
-            <p><strong>Anzahl Personen:</strong> ${participants}</p>
-            ${notes ? `<p><strong>Ihre Notizen:</strong> ${notes}</p>` : ''}
-          </div>
-
-          <div style="background-color: #E8DCC8; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #8B6F47; margin-top: 0;">Veranstaltungsort:</h3>
-            <p>
-              <strong>Atelier Auszeit</strong><br>
-              Feldstiege 6a<br>
-              48599 Gronau
-            </p>
-          </div>
-
-          <p><strong>Wichtig:</strong> Im Anhang dieser E-Mail finden Sie eine Kalenderdatei (.ics), die Sie direkt in Ihren Kalender importieren können.</p>
-
-	          <p>Bei Fragen oder Änderungswünschen können Sie uns gerne kontaktieren:</p>
-	          <p>
-	            📧 E-Mail: keramik-auszeit@web.de<br>
-	            📱 Telefon: +49 176 34255005
-	          </p>
-
-          <p style="margin-top: 30px;">Herzliche Grüße,<br>
-          <strong>Irena Woschkowiak</strong><br>
-          Atelier Auszeit</p>
-        </div>
-      `,
-      text: `
-Vielen Dank für Ihre Buchung!
+		    // Eingangsbestätigung für Kunden vorbereiten (Anfrage, noch nicht final bestätigt)
+		    const customerEmailData = {
+	      to: email,
+	      from: fromEmail,
+		      subject: `Buchungsanfrage eingegangen - Atelier Auszeit am ${date} um ${timeDisplay} Uhr`,
+	      html: `
+	        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+	          <h2 style="color: #8B6F47;">Vielen Dank für Ihre Buchungsanfrage!</h2>
+	          <p>Liebe/r ${name},</p>
+	          <p>wir haben Ihre Buchungsanfrage erhalten und prüfen nun, ob wir den Termin bestätigen können.</p>
+	          <p>Sie erhalten eine <strong>separate E-Mail mit der endgültigen Bestätigung</strong>, sobald wir Ihren Termin fest eingeplant haben.</p>
+	
+	          <div style="background-color: #F5F0E8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+		            <h3 style="color: #8B6F47; margin-top: 0;">Ihre Angabe:</h3>
+		            <p><strong>Datum:</strong> ${date}</p>
+		            <p><strong>Uhrzeit:</strong> ${timeDisplay} Uhr</p>
+	            <p><strong>Anzahl Personen:</strong> ${participants}</p>
+	            ${notes ? `<p><strong>Ihre Notizen:</strong> ${notes}</p>` : ''}
+	          </div>
+	
+	          <div style="background-color: #E8DCC8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+	            <h3 style="color: #8B6F47; margin-top: 0;">Veranstaltungsort:</h3>
+	            <p>
+	              <strong>Atelier Auszeit</strong><br>
+	              Feldstiege 6a<br>
+	              48599 Gronau
+	            </p>
+	          </div>
+	
+		          <p>Bei Fragen oder Änderungswünschen können Sie uns gerne kontaktieren:</p>
+		          <p>
+		            📧 E-Mail: keramik-auszeit@web.de<br>
+		            📱 Telefon: +49 176 34255005
+		          </p>
+	
+	          <p style="margin-top: 30px;">Herzliche Grüße,<br>
+	          <strong>Irena Woschkowiak</strong><br>
+	          Atelier Auszeit</p>
+	        </div>
+	      `,
+	      text: `
+Vielen Dank für Ihre Buchungsanfrage!
 
 Liebe/r ${name},
 
-Ihre Buchung wurde erfolgreich bestätigt. Wir freuen uns auf Ihren Besuch!
+wir haben Ihre Buchungsanfrage erhalten und prüfen nun, ob wir den Termin bestätigen können.
+Sie erhalten eine separate E-Mail mit der endgültigen Bestätigung, sobald wir Ihren Termin fest eingeplant haben.
 
-IHRE BUCHUNGSDETAILS:
-	  Datum: ${date}
-	  Uhrzeit: ${timeDisplay} Uhr
+IHRE ANGABE:
+  Datum: ${date}
+  Uhrzeit: ${timeDisplay} Uhr
 Anzahl Personen: ${participants}
 ${notes ? `Ihre Notizen: ${notes}` : ''}
 
@@ -161,17 +161,15 @@ Atelier Auszeit
 Feldstiege 6a
 48599 Gronau
 
-Im Anhang dieser E-Mail finden Sie eine Kalenderdatei (.ics), die Sie direkt in Ihren Kalender importieren können.
-
-	Bei Fragen oder Änderungswünschen können Sie uns gerne kontaktieren:
-	E-Mail: keramik-auszeit@web.de
+Bei Fragen oder Änderungswünschen können Sie uns gerne kontaktieren:
+E-Mail: keramik-auszeit@web.de
 Telefon: +49 176 34255005
 
 Herzliche Grüße,
 Irena Woschkowiak
 Atelier Auszeit
-      `
-    };
+	      `
+		    };
 
 	    // Kalender-Event erstellen (iCal Format)
 	    const eventDate = new Date(`${slot.date}T${slot.time}:00`);
@@ -247,19 +245,14 @@ END:VCALENDAR`;
           response: adminResult.response
         });
 
-        // Bestätigungs-E-Mail an Kunden senden
+	        // Eingangsbestätigung an Kunden senden (noch keine finale Terminbestätigung)
         console.log('📧 Sende Kunden-E-Mail an:', email);
         const customerResult = await transporter.sendMail({
           from: `"Atelier Auszeit - Irena Woschkowiak" <${fromEmail}>`,
           to: customerEmailData.to,
           subject: customerEmailData.subject,
           text: customerEmailData.text,
-          html: customerEmailData.html,
-          icalEvent: {
-            filename: 'termin.ics',
-            method: 'REQUEST',
-            content: icalEvent,
-          },
+	          html: customerEmailData.html,
         });
 
         customerEmailSent = true;

@@ -380,21 +380,32 @@ export const prerender = false;
 		
 		        if (loadingEl) loadingEl.classList.add('hidden');
 		
-		        // Nur wirklich gesetzte, zukünftige Buchungen anzeigen
+		        // Nur wirklich gesetzte, zukünftige Buchungen anzeigen.
+		        // Falls der zugehörige Slot nicht mehr existiert (z.B. Termin gelöscht),
+		        // zeigen wir die Buchung trotzdem an, damit nichts "verschwindet".
 		        const today = new Date();
 		        today.setHours(0, 0, 0, 0);
 		
 		        const activeBookings = (bookings as any[])
 		          .filter((b) => {
 		            if (b.status === 'cancelled') return false;
-		            if (!b.slotDate) return false;
-		            const slotDate = new Date(b.slotDate + 'T00:00:00');
-		            return slotDate >= today;
+		
+		            if (b.slotDate) {
+		              const slotDate = new Date(b.slotDate + 'T00:00:00');
+		              return slotDate >= today;
+		            }
+		
+		            // Fallback: Wenn kein Slot mehr gefunden wird, Buchung trotzdem anzeigen
+		            return true;
 		          })
 		          .sort((a, b) => {
-		            if (!a.slotDate || !b.slotDate) return 0;
-		            const aDate = new Date(`${a.slotDate}T${a.slotTime || '00:00'}:00`);
-		            const bDate = new Date(`${b.slotDate}T${b.slotTime || '00:00'}:00`);
+		            const aDateBase = a.slotDate || (a.createdAt ? String(a.createdAt).split('T')[0] : '');
+		            const bDateBase = b.slotDate || (b.createdAt ? String(b.createdAt).split('T')[0] : '');
+		
+		            if (!aDateBase || !bDateBase) return 0;
+		
+		            const aDate = new Date(`${aDateBase}T${a.slotTime || '00:00'}:00`);
+		            const bDate = new Date(`${bDateBase}T${b.slotTime || '00:00'}:00`);
 		            return aDate.getTime() - bDate.getTime();
 		          });
 
