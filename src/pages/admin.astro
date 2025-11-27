@@ -30,14 +30,39 @@ export const prerender = false;
     </div>
   </div>
 
-  <div id="admin-panel" class="admin-container hidden">
-    <header class="admin-header">
-      <h1>🎨 Terminverwaltung</h1>
-      <button id="logout-btn" class="btn btn-secondary">Abmelden</button>
-    </header>
-
-	    <main class="admin-main">
-		      <section class="add-slot-section">
+	  <div id="admin-panel" class="admin-container hidden">
+	    <header class="admin-header">
+	      <h1>🎨 Terminverwaltung</h1>
+	      <button id="logout-btn" class="btn btn-secondary">Abmelden</button>
+	    </header>
+	
+	    		<main class="admin-main">
+			      <section class="dashboard-section">
+			        <h2>Übersicht</h2>
+			        <div class="dashboard-grid">
+			          <div class="dashboard-card">
+			            <div class="dashboard-label">Termine heute</div>
+			            <div class="dashboard-value" id="dashboard-today-count">-</div>
+			          </div>
+			          <div class="dashboard-card">
+			            <div class="dashboard-label">Neue Anfragen</div>
+			            <div class="dashboard-value" id="dashboard-new-count">-</div>
+			          </div>
+			          <div class="dashboard-card">
+			            <div class="dashboard-label">Bestätigt</div>
+			            <div class="dashboard-value" id="dashboard-confirmed-count">-</div>
+			          </div>
+			          <div class="dashboard-card">
+			            <div class="dashboard-label">Offene Stornierungen</div>
+			            <div class="dashboard-value" id="dashboard-cancelled-count">-</div>
+			          </div>
+			          <div class="dashboard-card">
+			            <div class="dashboard-label">Nächste 7 Tage</div>
+			            <div class="dashboard-value" id="dashboard-next7-count">-</div>
+			          </div>
+			        </div>
+			      </section>
+			      <section class="add-slot-section">
 		        <h2 id="slot-form-title">Neuen Termin hinzufügen</h2>
 		        <form id="add-slot-form">
 		          <div class="form-row">
@@ -275,8 +300,62 @@ export const prerender = false;
       }
     }
 
-	    // Buchungen laden
-	    async function loadBookings() {
+		    // Dashboard-Kennzahlen aktualisieren
+		    function updateDashboard(bookings: any[]) {
+		      const today = new Date();
+		      today.setHours(0, 0, 0, 0);
+		      const todayStr = today.toISOString().split('T')[0];
+		      const sevenDaysAhead = new Date(today);
+		      sevenDaysAhead.setDate(sevenDaysAhead.getDate() + 7);
+
+		      let todayCount = 0;
+		      let newCount = 0;
+		      let confirmedCount = 0;
+		      let cancelledCount = 0;
+		      let next7Count = 0;
+
+		      (bookings as any[]).forEach((b) => {
+		        if (!b.slotDate) return;
+		        const slotDate = new Date(b.slotDate + 'T00:00:00');
+		        const status = b.status || 'confirmed';
+
+		        const isToday = b.slotDate === todayStr;
+		        const isFutureOrToday = slotDate >= today;
+		        const isWithinNext7 = slotDate >= today && slotDate <= sevenDaysAhead;
+
+		        if (isToday && status !== 'cancelled') {
+		          todayCount += 1;
+		        }
+
+		        if (isFutureOrToday) {
+		          if (status === 'pending') newCount += 1;
+		          if (status === 'confirmed') confirmedCount += 1;
+		          if (status === 'cancelled') cancelledCount += 1;
+		        }
+
+		        if (isWithinNext7 && status !== 'cancelled') {
+		          next7Count += 1;
+		        }
+		      });
+
+		      const todayEl = document.getElementById('dashboard-today-count');
+		      if (todayEl) todayEl.textContent = String(todayCount);
+
+		      const newEl = document.getElementById('dashboard-new-count');
+		      if (newEl) newEl.textContent = String(newCount);
+
+		      const confirmedEl = document.getElementById('dashboard-confirmed-count');
+		      if (confirmedEl) confirmedEl.textContent = String(confirmedCount);
+
+		      const cancelledEl = document.getElementById('dashboard-cancelled-count');
+		      if (cancelledEl) cancelledEl.textContent = String(cancelledCount);
+
+		      const next7El = document.getElementById('dashboard-next7-count');
+		      if (next7El) next7El.textContent = String(next7Count);
+		    }
+
+		    // Buchungen laden
+		    async function loadBookings() {
 	      const loadingEl = document.getElementById('bookings-loading');
 	      const listEl = document.getElementById('bookings-list');
 	      const noBookingsEl = document.getElementById('no-bookings');
@@ -285,79 +364,163 @@ export const prerender = false;
 	      if (listEl) listEl.classList.add('hidden');
 	      if (noBookingsEl) noBookingsEl.classList.add('hidden');
 
-	      try {
-	        const response = await fetch('/api/admin/bookings', {
-	          headers: {
-	            'Authorization': `Basic ${authCredentials}`,
-	          },
-	        });
-
-	        if (!response.ok) throw new Error('Failed to load bookings');
-
-	        const bookings = await response.json();
-
-	        if (loadingEl) loadingEl.classList.add('hidden');
-
-	        // Nur wirklich gesetzte, zukünftige Buchungen anzeigen
-	        const today = new Date();
-	        today.setHours(0, 0, 0, 0);
-
-	        const activeBookings = (bookings as any[]).filter((b) => {
-	          if (b.status === 'cancelled') return false;
-	          if (!b.slotDate) return false;
-	          const slotDate = new Date(b.slotDate + 'T00:00:00');
-	          return slotDate >= today;
-	        });
+		      try {
+		        const response = await fetch('/api/admin/bookings', {
+		          headers: {
+		            'Authorization': `Basic ${authCredentials}`,
+		          },
+		        });
+		
+		        if (!response.ok) throw new Error('Failed to load bookings');
+		
+		        const bookings = await response.json();
+		
+		        // Dashboard aktualisieren (auch wenn es keine aktiven Buchungen mehr gibt)
+		        updateDashboard(bookings as any[]);
+		
+		        if (loadingEl) loadingEl.classList.add('hidden');
+		
+		        // Nur wirklich gesetzte, zukünftige Buchungen anzeigen
+		        const today = new Date();
+		        today.setHours(0, 0, 0, 0);
+		
+		        const activeBookings = (bookings as any[])
+		          .filter((b) => {
+		            if (b.status === 'cancelled') return false;
+		            if (!b.slotDate) return false;
+		            const slotDate = new Date(b.slotDate + 'T00:00:00');
+		            return slotDate >= today;
+		          })
+		          .sort((a, b) => {
+		            if (!a.slotDate || !b.slotDate) return 0;
+		            const aDate = new Date(`${a.slotDate}T${a.slotTime || '00:00'}:00`);
+		            const bDate = new Date(`${b.slotDate}T${b.slotTime || '00:00'}:00`);
+		            return aDate.getTime() - bDate.getTime();
+		          });
 
 	        if (activeBookings.length === 0) {
 	          if (noBookingsEl) noBookingsEl.classList.remove('hidden');
 	          return;
 	        }
 
-	        if (listEl) {
-	          listEl.innerHTML = activeBookings
-	            .map((booking: any) => {
-	              const dateLabel = booking.slotDate
-	                ? formatDate(booking.slotDate)
-	                : 'Kein Datum';
-	              const timeLabel = booking.slotTime
-	                ? `${booking.slotTime}${booking.slotEndTime ? ' - ' + booking.slotEndTime : ''} Uhr`
-	                : '';
+		        if (listEl) {
+		          listEl.innerHTML = activeBookings
+		            .map((booking: any) => {
+		              const dateLabel = booking.slotDate
+		                ? formatDate(booking.slotDate)
+		                : 'Kein Datum';
+		              const timeLabel = booking.slotTime
+		                ? `${booking.slotTime}${booking.slotEndTime ? ' - ' + booking.slotEndTime : ''} Uhr`
+		                : '';
 
-	              return `
-	                <div class="slot-card booking-card" data-id="${booking.id}">
-	                  <div class="slot-info">
-	                    <div>
-	                      <div class="slot-date">${dateLabel}</div>
-	                      <div class="slot-time">${timeLabel}</div>
-	                    </div>
-	                    <div>
-	                      <div><strong>${booking.name}</strong></div>
-	                      <div>${booking.participants} Person(en)</div>
-	                    </div>
-	                  </div>
-	                  <div class="slot-actions">
-	                    <button class="btn btn-danger btn-cancel-booking" data-id="${booking.id}">
-	                      Buchung stornieren
-	                    </button>
-	                  </div>
-	                </div>
-	              `;
-	            })
-	            .join('');
+		              const status = booking.status || 'confirmed';
+		              let statusLabel = 'Bestätigt';
+		              let statusClass = 'booking-status--confirmed';
+		              if (status === 'pending') {
+		                statusLabel = 'Neu / unbestätigt';
+		                statusClass = 'booking-status--pending';
+		              } else if (status === 'cancelled') {
+		                statusLabel = 'Abgesagt';
+		                statusClass = 'booking-status--cancelled';
+		              }
 
-	          listEl.classList.remove('hidden');
+		              const showConfirm = status === 'pending';
+		              const showCancel = status !== 'cancelled';
 
-	          // Cancel-Handler
-	          listEl.querySelectorAll('.btn-cancel-booking').forEach((btn) => {
-	            btn.addEventListener('click', async (e) => {
-	              const id = (e.target as HTMLElement).dataset.id;
-	              if (id && confirm('Buchung wirklich stornieren?')) {
-	                await cancelBookingAdmin(id);
-	              }
-	            });
-	          });
-	        }
+		              return `
+		                <div class="slot-card booking-card" data-id="${booking.id}">
+		                  <div class="slot-info booking-info">
+		                    <div class="booking-main">
+		                      <div>
+		                        <div class="slot-date">${dateLabel}</div>
+		                        <div class="slot-time">${timeLabel}</div>
+		                      </div>
+		                      <div class="booking-status ${statusClass}">${statusLabel}</div>
+		                    </div>
+		                    <div class="booking-customer">
+		                      <div><strong>${booking.name}</strong>${booking.email ? ` (${booking.email})` : ''}</div>
+		                      <div>${booking.participants} Person(en)</div>
+		                    </div>
+		                  </div>
+		                  <div class="slot-actions booking-actions">
+		                    ${showConfirm ? `<button class="btn btn-success btn-confirm-booking" data-id="${booking.id}">✓ Bestätigen</button>` : ''}
+		                    ${showCancel ? `<button class="btn btn-danger btn-cancel-booking" data-id="${booking.id}">✕ Absagen</button>` : ''}
+		                    <button class="btn btn-secondary btn-edit-booking" data-id="${booking.id}">✎ Bearbeiten</button>
+		                  </div>
+		                </div>
+		              `;
+		            })
+		            .join('');
+		
+		          listEl.classList.remove('hidden');
+		
+		          // Cancel-Handler
+		          listEl.querySelectorAll('.btn-cancel-booking').forEach((btn) => {
+		            btn.addEventListener('click', async (e) => {
+		              const id = (e.target as HTMLElement).dataset.id;
+		              if (id && confirm('Buchung wirklich stornieren?')) {
+		                await cancelBookingAdmin(id);
+		              }
+		            });
+		          });
+		
+		          // Confirm-Handler
+		          listEl.querySelectorAll('.btn-confirm-booking').forEach((btn) => {
+		            btn.addEventListener('click', async (e) => {
+		              const id = (e.target as HTMLElement).dataset.id;
+		              if (id && confirm('Buchung als bestätigt markieren?')) {
+		                await confirmBookingAdmin(id);
+		              }
+		            });
+		          });
+		
+		          // Edit-Handler (Teilnehmerzahl & Notizen mit einfachen Prompts bearbeiten)
+		          listEl.querySelectorAll('.btn-edit-booking').forEach((btn) => {
+		            btn.addEventListener('click', async (e) => {
+		              const id = (e.target as HTMLElement).dataset.id;
+		              if (!id) return;
+
+		              const booking = (activeBookings as any[]).find((b) => b.id === id);
+		              if (!booking) return;
+
+		              const participantsInput = prompt('Anzahl Personen', String(booking.participants || 1));
+		              if (participantsInput === null) return;
+		              const participants = parseInt(participantsInput, 10);
+		              if (!Number.isFinite(participants) || participants <= 0) {
+		                alert('Bitte eine gültige Personenzahl eingeben.');
+		                return;
+		              }
+
+		              const notesInput = prompt('Notizen (optional)', booking.notes || '');
+		              try {
+		                const response = await fetch('/api/admin/bookings', {
+		                  method: 'PUT',
+		                  headers: {
+		                    'Authorization': `Basic ${authCredentials}`,
+		                    'Content-Type': 'application/json',
+		                  },
+		                  body: JSON.stringify({
+		                    id,
+		                    participants,
+		                    notes: notesInput ?? '',
+		                  }),
+		                });
+		
+		                if (response.ok) {
+		                  await loadBookings();
+		                  await loadSlots();
+		                } else {
+		                  const result = await response.json().catch(() => null);
+		                  const message = result?.error || 'Fehler beim Aktualisieren der Buchung';
+		                  alert(message);
+		                }
+		              } catch (error) {
+		                console.error('Error updating booking:', error);
+		                alert('Fehler beim Aktualisieren der Buchung');
+		              }
+		            });
+		          });
+		        }
 	      } catch (error) {
 	        console.error('Error loading bookings:', error);
 	        if (loadingEl) loadingEl.classList.add('hidden');
@@ -386,8 +549,8 @@ export const prerender = false;
       }
     }
 
-	    // Buchung stornieren
-	    async function cancelBookingAdmin(id: string) {
+		    // Buchung stornieren
+		    async function cancelBookingAdmin(id: string) {
 	      try {
 	        const response = await fetch('/api/admin/bookings', {
 	          method: 'POST',
@@ -410,6 +573,29 @@ export const prerender = false;
 	        alert('Fehler beim Stornieren der Buchung');
 	      }
 	    }
+
+		    // Buchung als bestätigt markieren
+		    async function confirmBookingAdmin(id: string) {
+		      try {
+		        const response = await fetch('/api/admin/bookings', {
+		          method: 'POST',
+		          headers: {
+		            'Authorization': `Basic ${authCredentials}`,
+		            'Content-Type': 'application/json',
+		          },
+		          body: JSON.stringify({ id, action: 'confirm' }),
+		        });
+		
+		        if (response.ok) {
+		          await loadBookings();
+		        } else {
+		          alert('Fehler beim Bestätigen der Buchung');
+		        }
+		      } catch (error) {
+		        console.error('Error confirming booking:', error);
+		        alert('Fehler beim Bestätigen der Buchung');
+		      }
+		    }
 
 	    // Formular in Bearbeitungsmodus versetzen
 	    function startEditSlot(slot: any) {

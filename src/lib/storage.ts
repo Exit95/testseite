@@ -116,7 +116,8 @@ export async function addBooking(booking: Omit<Booking, 'id' | 'createdAt' | 'st
     ...booking,
     id: `booking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     createdAt: new Date().toISOString(),
-    status: 'confirmed',
+	    // Neue Buchungen starten als "neu/unbestätigt" und können im Admin-Panel bestätigt werden
+	    status: 'pending',
   };
   
   bookings.push(newBooking);
@@ -148,7 +149,59 @@ export async function cancelBooking(id: string): Promise<boolean> {
     slot.available += booking.participants;
     await updateTimeSlot(slot.id, { available: slot.available });
   }
-  
-  return true;
-}
+	  
+	  return true;
+	}
 
+	// Allgemeine Aktualisierung einer Buchung (z.B. Teilnehmerzahl, Notizen, Status)
+	// Hinweis: Status "cancelled" wird weiterhin ausschließlich über cancelBooking gesetzt,
+	// damit die Kapazitätslogik zentral bleibt.
+	export async function updateBooking(
+	  id: string,
+	  updates: Partial<Omit<Booking, 'id' | 'slotId' | 'createdAt'>>
+	): Promise<Booking | null> {
+	  // Verhindere, dass Stornierungen über diese Funktion laufen
+	  if ('status' in updates && updates.status === 'cancelled') {
+	    throw new Error('USE_CANCEL_BOOKING');
+	  }
+
+	  const bookings = await getBookings();
+	  const index = bookings.findIndex((b) => b.id === id);
+	  if (index === -1) return null;
+
+	  const current = bookings[index];
+
+	  // Wenn sich die Teilnehmerzahl ändert, muss die Slot-Kapazität angepasst werden
+	  if (
+	    typeof updates.participants === 'number' &&
+	    updates.participants !== current.participants
+	  ) {
+	    if (updates.participants <= 0) {
+	      throw new Error('INVALID_PARTICIPANTS');
+	    }
+
+	    const slots = await getTimeSlots();
+	    const slot = slots.find((s) => s.id === current.slotId);
+	    if (!slot) return null;
+
+	    const delta = updates.participants - current.participants;
+	    const newAvailable = slot.available - delta;
+
+	    if (newAvailable < 0) {
+	      throw new Error('NOT_ENOUGH_CAPACITY');
+	    }
+
+	    await updateTimeSlot(slot.id, { available: newAvailable });
+	  }
+
+	  const updated: Booking = {
+	    ...current,
+	    ...updates,
+	  };
+
+	  bookings[index] = updated;
+	  await saveBookings(bookings);
+	  return updated;
+	}
+	
+	

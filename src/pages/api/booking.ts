@@ -7,10 +7,16 @@ export const POST: APIRoute = async ({ request }) => {
 	    const data = await request.json();
 	    const { name, email, phone, participants, date, time, notes } = data;
 
-	    // Finde den passenden Slot
-	    const slots = await getTimeSlots();
-	    const dateStr = new Date(date).toISOString().split('T')[0];
-	    const slot = slots.find(s => s.date === dateStr && s.time === time);
+		    // Finde den passenden Slot
+		    const slots = await getTimeSlots();
+		    // Das Frontend sendet das Datum bereits im Format "YYYY-MM-DD".
+		    // Wir vermeiden hier eine Umwandlung mit new Date(...), weil dadurch durch
+		    // Zeitzonenverschiebungen (z.B. +01:00) der Vortag herauskommen kann und
+		    // der Slot dann nicht gefunden wird.
+		    const dateStr = typeof date === 'string'
+		      ? (date.includes('T') ? date.split('T')[0] : date)
+		      : new Date(date).toISOString().split('T')[0];
+		    const slot = slots.find(s => s.date === dateStr && s.time === time);
 
     if (!slot) {
       return new Response(

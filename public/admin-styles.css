@@ -74,6 +74,45 @@ body {
   gap: 2rem;
 }
 
+	/* Dashboard */
+	.dashboard-section {
+	  background: white;
+	  padding: 2rem;
+	  border-radius: 12px;
+	  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	}
+
+	.dashboard-section h2 {
+	  font-size: 1.5rem;
+	  color: #8B6F47;
+	  margin-bottom: 1.5rem;
+	}
+
+	.dashboard-grid {
+	  display: grid;
+	  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	  gap: 1rem;
+	}
+
+	.dashboard-card {
+	  background: #FAF8F5;
+	  border-radius: 10px;
+	  padding: 1rem 1.25rem;
+	  border: 1px solid #E8D5C4;
+	}
+
+	.dashboard-label {
+	  font-size: 0.9rem;
+	  color: #666;
+	  margin-bottom: 0.25rem;
+	}
+
+	.dashboard-value {
+	  font-size: 1.4rem;
+	  font-weight: 700;
+	  color: #8B6F47;
+	}
+
 /* Sections */
 .add-slot-section,
 .slots-section,
@@ -156,6 +195,17 @@ body {
   background: #6F5838;
 }
 
+	.btn-success {
+	  background: #198754;
+	  color: white;
+	  padding: 0.5rem 1rem;
+	  font-size: 0.9rem;
+	}
+
+	.btn-success:hover {
+	  background: #157347;
+	}
+
 .btn-danger {
   background: #dc3545;
   color: white;
@@ -195,6 +245,56 @@ body {
   gap: 2rem;
   align-items: center;
 }
+
+	/* Buchungs-Liste mit Status und Aktionen */
+	.booking-card .booking-info {
+	  flex-direction: column;
+	  align-items: flex-start;
+	  gap: 0.75rem;
+	}
+
+	.booking-main {
+	  display: flex;
+	  justify-content: space-between;
+	  align-items: center;
+	  gap: 1rem;
+	  width: 100%;
+	}
+
+	.booking-customer {
+	  color: #555;
+	  font-size: 0.95rem;
+	}
+
+	.booking-actions {
+	  display: flex;
+	  flex-direction: column;
+	  gap: 0.5rem;
+	  align-items: flex-end;
+	}
+
+	.booking-status {
+	  padding: 0.25rem 0.75rem;
+	  border-radius: 999px;
+	  font-size: 0.75rem;
+	  font-weight: 600;
+	  text-transform: uppercase;
+	}
+
+	.booking-status--pending {
+	  background: #fff3cd;
+	  color: #856404;
+	}
+
+	.booking-status--confirmed {
+	  background: #d1e7dd;
+	  color: #0f5132;
+	}
+
+	.booking-status--cancelled {
+	  background: #f8d7da;
+	  color: #842029;
+	}
 
 .slot-date {
   font-weight: 600;
@@ -256,5 +356,13 @@ body {
   .btn-delete {
     width: 100%;
   }
+
+	  .booking-actions {
+	    align-items: stretch;
+	  }
+
+	  .booking-actions .btn {
+	    width: 100%;
+	  }
 }
 
