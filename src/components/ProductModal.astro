@@ -6,17 +6,27 @@
   <div class="modal__overlay"></div>
   <div class="modal__content">
     <button class="modal__close" aria-label="Schließen">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
         <line x1="18" y1="6" x2="6" y2="18"></line>
         <line x1="6" y1="6" x2="18" y2="18"></line>
       </svg>
     </button>
-    
+
     <div class="modal__header">
       <h3 class="modal__title"></h3>
       <p class="modal__price"></p>
     </div>
-    
+
     <div class="modal__gallery">
       <!-- Bilder werden hier dynamisch eingefügt -->
     </div>
@@ -128,25 +138,34 @@
   }
 
   .modal__gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: var(--space-4);
   }
 
   .modal__gallery img {
-    width: 100%;
     height: 300px;
+    width: auto;
+    flex-grow: 1;
     object-fit: cover;
     border-radius: var(--radius);
     cursor: pointer;
-    transition: transform var(--duration-normal) var(--easing);
+    transition: all var(--duration-normal) var(--easing);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
-  .modal__gallery img:hover {
-    transform: scale(1.05);
+  /* Damit die letzte Zeile nicht extrem gestreckt wird */
+  .modal__gallery::after {
+    content: "";
+    flex-grow: 10;
   }
 
+  .modal__gallery img:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Mobile */
   @media (max-width: 640px) {
     .modal {
       padding: 0;
@@ -167,12 +186,13 @@
     }
 
     .modal__gallery {
-      grid-template-columns: 1fr;
+      gap: var(--space-2);
     }
 
     .modal__gallery img {
-      height: 250px;
+      height: 200px;
+      width: 100%; /* Auf Mobile volle Breite oder flexibel lassen? Volle Breite ist sicherer */
+      flex-grow: 0;
     }
   }
 </style>
-
