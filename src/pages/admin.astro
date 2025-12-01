@@ -673,7 +673,8 @@ export const prerender = false;
           method: 'DELETE',
           headers: {
             'Authorization': `Basic ${authCredentials}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
           },
           body: JSON.stringify({ id })
         });
@@ -1024,7 +1025,8 @@ export const prerender = false;
         const response = await fetch(`/api/admin/workshops?id=${encodeURIComponent(id)}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Basic ${authCredentials}`
+            'Authorization': `Basic ${authCredentials}`,
+            'X-Requested-With': 'XMLHttpRequest'
           }
         });
 
@@ -1329,7 +1331,10 @@ export const prerender = false;
       try {
         const response = await fetch(`/api/gallery/categories?id=${id}`, {
           method: 'DELETE',
-          headers: { 'Authorization': `Basic ${authCredentials}` }
+          headers: {
+            'Authorization': `Basic ${authCredentials}`,
+            'X-Requested-With': 'XMLHttpRequest'
+          }
         });
 
         if (response.ok) {
@@ -1548,7 +1553,8 @@ export const prerender = false;
         const response = await fetch(`/api/images?filename=${encodeURIComponent(filename)}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Basic ${authCredentials}`
+            'Authorization': `Basic ${authCredentials}`,
+            'X-Requested-With': 'XMLHttpRequest'
           }
         });
 
