@@ -51,7 +51,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   try {
     const data = await request.json();
-    const { title, description, date, time, price, maxParticipants, active } = data;
+    const { title, description, detailedDescription, date, time, price, maxParticipants, active, imageFilename } = data;
 
     if (!title || !description || !date || !time || !price || !maxParticipants) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
@@ -63,11 +63,13 @@ export const POST: APIRoute = async ({ request }) => {
     const newWorkshop = await addWorkshop({
       title,
       description,
+      detailedDescription: detailedDescription || undefined,
       date,
       time,
       price,
       maxParticipants: parseInt(String(maxParticipants), 10),
-      active: active === true || active === 'true'
+      active: active === true || active === 'true',
+      imageFilename: imageFilename || undefined
     });
 
     return new Response(JSON.stringify(newWorkshop), {
@@ -93,7 +95,7 @@ export const PUT: APIRoute = async ({ request }) => {
 
   try {
     const data = await request.json();
-    const { id, title, description, date, time, price, maxParticipants, active } = data;
+    const { id, title, description, detailedDescription, date, time, price, maxParticipants, active, imageFilename } = data;
 
     if (!id) {
       return new Response(JSON.stringify({ error: 'Missing workshop ID' }), {
@@ -105,11 +107,13 @@ export const PUT: APIRoute = async ({ request }) => {
     const updates: any = {};
     if (title !== undefined) updates.title = title;
     if (description !== undefined) updates.description = description;
+    if (detailedDescription !== undefined) updates.detailedDescription = detailedDescription || undefined;
     if (date !== undefined) updates.date = date;
     if (time !== undefined) updates.time = time;
     if (price !== undefined) updates.price = price;
     if (maxParticipants !== undefined) updates.maxParticipants = parseInt(String(maxParticipants), 10);
     if (active !== undefined) updates.active = active === true || active === 'true';
+    if (imageFilename !== undefined) updates.imageFilename = imageFilename || undefined;
 
     const updated = await updateWorkshop(id, updates);
 
