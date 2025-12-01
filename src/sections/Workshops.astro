@@ -1,382 +1,47 @@
 ---
-// Workshops Section - zeigt nur aktive Workshops an
 ---
 
-<section class="workshops animate-on-scroll">
+<section id="workshops" class="workshops animate-on-scroll">
   <div class="container">
     <h2 class="workshops__title">Workshops</h2>
     <p class="workshops__subtitle">
       Entdecken Sie unsere kreativen Keramik-Workshops
     </p>
+
     <div id="workshops-container" class="workshops__grid">
       <div class="workshops__loading">Lade Workshops...</div>
     </div>
+
     <div id="no-workshops" class="workshops__empty hidden">
       Aktuell sind keine Workshops verfügbar.
     </div>
   </div>
 </section>
 
-<!-- Workshop Detail Modal -->
-<div id="workshop-modal" class="workshop-modal hidden">
-  <div class="workshop-modal__overlay"></div>
-  <div class="workshop-modal__content">
-    <button class="workshop-modal__close" id="close-modal">&times;</button>
-    <div id="workshop-modal-body"></div>
-  </div>
-</div>
-
 <script>
-  let allWorkshops: any[] = [];
+  type Workshop = {
+    id: string;
+    title: string;
+    description: string;
+    date: string;
+    time: string;
+    price: string;
+    maxParticipants: number;
+    currentParticipants?: number;
+    availableSpots?: number;
+    imageFilename?: string;
+  };
 
-  async function loadWorkshops() {
-    const container = document.getElementById("workshops-container");
-    const noWorkshops = document.getElementById("no-workshops");
-
-    if (!container || !noWorkshops) return;
-
+  function formatDate(date: string): string {
     try {
-      const response = await fetch("/api/workshops");
-      if (!response.ok) throw new Error("Failed to load workshops");
-
-      allWorkshops = await response.json();
-
-      // Loading entfernen
-      container.innerHTML = "";
-
-      if (allWorkshops.length === 0) {
-        container.classList.add("hidden");
-        noWorkshops.classList.remove("hidden");
-        return;
-      }
-
-      noWorkshops.classList.add("hidden");
-      container.classList.remove("hidden");
-
-      allWorkshops.forEach((workshop: any) => {
-        const card = document.createElement("div");
-        card.className = "workshop-card";
-        card.setAttribute("data-workshop-id", workshop.id);
-
-        const formattedDate = new Date(
-          workshop.date + "T00:00:00",
-        ).toLocaleDateString("de-DE", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
-
-        // Kurzbeschreibung (max 100 Zeichen für saubereres Layout)
-        const shortDescription =
-          workshop.description.length > 100
-            ? workshop.description.substring(0, 100) + "..."
-            : workshop.description;
-
-        // Verfügbarkeit
-        const availableSpots = workshop.availableSpots || 0;
-        const isFull = availableSpots <= 0;
-        const isAlmostFull = availableSpots > 0 && availableSpots <= 3;
-
-        let availabilityClass = "";
-        let availabilityText = `${availableSpots} Plätze frei`;
-
-        if (isFull) {
-          availabilityClass = "availability-full";
-          availabilityText = "Ausgebucht";
-        } else if (isAlmostFull) {
-          availabilityClass = "availability-low";
-          availabilityText = `Nur noch ${availableSpots} Plätze`;
-        }
-
-        // Bild (falls vorhanden)
-        const imageHtml = workshop.imageFilename
-          ? `<div class="workshop-card__image">
-               <img src="/uploads/${workshop.imageFilename}" alt="${escapeHtml(workshop.title)}" loading="lazy">
-               ${isFull ? '<div class="workshop-card__badge workshop-card__badge--full">Ausgebucht</div>' : ""}
-             </div>`
-          : `<div class="workshop-card__image workshop-card__image--placeholder">
-               <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                 <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                 <path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>
-               </svg>
-               ${isFull ? '<div class="workshop-card__badge workshop-card__badge--full">Ausgebucht</div>' : ""}
-             </div>`;
-
-        card.innerHTML = `
-          ${imageHtml}
-          <div class="workshop-card__content">
-            <div class="workshop-card__header">
-              <h3 class="workshop-card__title">${escapeHtml(workshop.title)}</h3>
-              <span class="workshop-card__price">${escapeHtml(workshop.price)}</span>
-            </div>
-            
-            <div class="workshop-card__info">
-              <div class="workshop-card__detail">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                <span>${formattedDate}</span>
-              </div>
-              <div class="workshop-card__detail">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-                <span>${workshop.time} Uhr</span>
-              </div>
-            </div>
-
-            <p class="workshop-card__description">${escapeHtml(shortDescription)}</p>
-            
-            <div class="workshop-card__footer">
-              <div class="workshop-card__spots ${availabilityClass}">
-                <span class="status-dot"></span>
-                ${availabilityText}
-              </div>
-              <span class="workshop-card__cta">Details & Buchen &rarr;</span>
-            </div>
-          </div>
-          `;
-
-        // Click-Handler für die gesamte Karte → führt jetzt zur Detailseite
-        card.addEventListener("click", () => {
-          window.location.href = `/workshops/${encodeURIComponent(workshop.id)}`;
-        });
-
-        container.appendChild(card);
+      return new Date(date + "T00:00:00").toLocaleDateString("de-DE", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       });
-    } catch (error) {
-      console.error("Error loading workshops:", error);
-      container.innerHTML =
-        '<p class="workshops__error">Fehler beim Laden der Workshops.</p>';
-    }
-  }
-
-  function showWorkshopDetails(workshop: any) {
-    const modal = document.getElementById("workshop-modal");
-    const modalBody = document.getElementById("workshop-modal-body");
-
-    if (!modal || !modalBody) return;
-
-    const formattedDate = new Date(
-      workshop.date + "T00:00:00",
-    ).toLocaleDateString("de-DE", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-
-    const availableSpots = workshop.availableSpots || 0;
-    const isFull = availableSpots <= 0;
-
-    const imageHtml = workshop.imageFilename
-      ? `<div class="workshop-detail__image-wrapper">
-           <img src="/uploads/${workshop.imageFilename}" alt="${escapeHtml(workshop.title)}" class="workshop-detail__image">
-         </div>`
-      : "";
-
-    modalBody.innerHTML = `
-      <div class="workshop-detail__grid">
-        ${imageHtml}
-        <div class="workshop-detail__content">
-          <h2 class="workshop-detail__title">${escapeHtml(workshop.title)}</h2>
-          
-          <div class="workshop-detail__meta">
-            <div class="workshop-detail__price-tag">${escapeHtml(workshop.price)}</div>
-            <div class="workshop-detail__status ${isFull ? "status-full" : "status-available"}">
-              ${isFull ? "Ausgebucht" : `${availableSpots} Plätze verfügbar`}
-            </div>
-          </div>
-
-          <div class="workshop-detail__info-grid">
-            <div class="info-item">
-              <span class="info-label">Datum</span>
-              <span class="info-value">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                ${formattedDate}
-              </span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Uhrzeit</span>
-              <span class="info-value">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-                ${workshop.time} Uhr
-              </span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Teilnehmer</span>
-              <span class="info-value">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-                Max. ${workshop.maxParticipants}
-              </span>
-            </div>
-          </div>
-
-          <div class="workshop-detail__description">
-            <h3>Beschreibung</h3>
-            <p>${escapeHtml(workshop.description)}</p>
-          </div>
-
-          <div class="workshop-detail__booking">
-            <h3>Workshop buchen</h3>
-            <p class="workshop-detail__booking-intro">
-              Reservieren Sie Ihren Platz für diesen Termin. Sie erhalten im Anschluss eine persönliche Bestätigung per E-Mail.
-            </p>
-
-            <form id="workshop-booking-form" class="workshop-booking-form">
-              <div class="workshop-booking-form__grid">
-                <div class="form-group">
-                  <label for="workshop-name">Name *</label>
-                  <input type="text" id="workshop-name" name="name" required />
-                </div>
-
-                <div class="form-group">
-                  <label for="workshop-email">E-Mail *</label>
-                  <input type="email" id="workshop-email" name="email" required />
-                </div>
-
-                <div class="form-group">
-                  <label for="workshop-phone">Telefon</label>
-                  <input type="tel" id="workshop-phone" name="phone" />
-                </div>
-
-                <div class="form-group">
-                  <label for="workshop-participants">Anzahl Personen *</label>
-                  <input
-                    type="number"
-                    id="workshop-participants"
-                    name="participants"
-                    min="1"
-                    max="${availableSpots}"
-                    value="1"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div class="form-group form-group--full">
-                <label for="workshop-notes">Anmerkungen (optional)</label>
-                <textarea
-                  id="workshop-notes"
-                  name="notes"
-                  rows="3"
-                  placeholder="Zum Beispiel: Anlass, besondere Wünsche oder Fragen"
-                ></textarea>
-              </div>
-
-              <div class="workshop-booking-form__actions">
-                <button type="submit" class="btn btn-primary" ${isFull ? "disabled" : ""}>
-                  ${isFull ? "Leider ausgebucht" : "Jetzt verbindlich anfragen"}
-                </button>
-              </div>
-
-              <p class="workshop-booking-form__hint">
-                Ihre Anfrage wird an uns übermittelt. Die Buchung ist erst nach unserer Bestätigung verbindlich.
-              </p>
-            </form>
-
-            <div id="workshop-booking-message" class="workshop-booking-message hidden"></div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    const bookingForm = modalBody.querySelector(
-      "#workshop-booking-form",
-    ) as HTMLFormElement | null;
-    const messageEl = modalBody.querySelector(
-      "#workshop-booking-message",
-    ) as HTMLDivElement | null;
-
-    if (bookingForm && messageEl && !isFull) {
-      const submitBtn = bookingForm.querySelector(
-        'button[type="submit"]',
-      ) as HTMLButtonElement | null;
-
-      bookingForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
-
-        if (!submitBtn) return;
-
-        const originalText = submitBtn.textContent || "Jetzt verbindlich anfragen";
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Wird gesendet...";
-
-        const formData = new FormData(bookingForm);
-        const payload = {
-          workshopId: workshop.id,
-          name: String(formData.get("name") || "").trim(),
-          email: String(formData.get("email") || "").trim(),
-          phone: String(formData.get("phone") || "").trim(),
-          participants: Number(formData.get("participants") || 1),
-          notes: String(formData.get("notes") || "").trim(),
-        };
-
-        messageEl.classList.remove("hidden");
-        messageEl.className = "workshop-booking-message";
-
-        try {
-          const response = await fetch("/api/workshops/book", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          });
-
-          const result = await response.json().catch(() => ({}));
-
-          if (response.ok && result.success) {
-            messageEl.textContent =
-              "Vielen Dank! Ihre Buchungsanfrage wurde übermittelt. Sie erhalten in Kürze eine Bestätigung per E-Mail.";
-            messageEl.classList.add("workshop-booking-message--success");
-            bookingForm.reset();
-          } else {
-            const errorMessage =
-              result.error ||
-              "Die Buchung konnte nicht durchgeführt werden. Bitte versuchen Sie es später erneut.";
-            messageEl.textContent = errorMessage;
-            messageEl.classList.add("workshop-booking-message--error");
-          }
-        } catch (error) {
-          console.error("Error booking workshop:", error);
-          messageEl.textContent =
-            "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut oder kontaktieren Sie uns direkt.";
-          messageEl.classList.add("workshop-booking-message--error");
-        } finally {
-          submitBtn.disabled = false;
-          submitBtn.textContent = originalText;
-        }
-      });
-    }
-
-    modal.classList.remove("hidden");
-    document.body.style.overflow = "hidden"; // Prevent background scrolling
-  }
-
-  function closeModal() {
-    const modal = document.getElementById("workshop-modal");
-    if (modal) {
-      modal.classList.add("hidden");
-      document.body.style.overflow = ""; // Restore background scrolling
+    } catch {
+      return date;
     }
   }
 
@@ -386,18 +51,126 @@
     return div.innerHTML;
   }
 
-  // Event Listeners
-  document.getElementById("close-modal")?.addEventListener("click", closeModal);
-  document
-    .querySelector(".workshop-modal__overlay")
-    ?.addEventListener("click", closeModal);
+  function createWorkshopCard(workshop: Workshop): HTMLElement {
+    const card = document.createElement("a");
+    card.className = "workshop-card";
+    card.href = `/workshops/${encodeURIComponent(workshop.id)}`;
+    card.setAttribute("data-workshop-id", workshop.id);
 
-  // Close on Escape key
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeModal();
-  });
+    const formattedDate = formatDate(workshop.date);
+    const shortDescription =
+      workshop.description.length > 140
+        ? workshop.description.substring(0, 140) + "…"
+        : workshop.description;
 
-  // Workshops beim Laden der Seite abrufen
+    const availableSpots =
+      typeof workshop.availableSpots === "number"
+        ? workshop.availableSpots
+        : Math.max(
+            0,
+            (workshop.maxParticipants || 0) -
+              (workshop.currentParticipants || 0),
+          );
+
+    const isFull = availableSpots <= 0;
+    const isAlmostFull = availableSpots > 0 && availableSpots <= 3;
+
+    let availabilityText = `${availableSpots} Plätze frei`;
+    let availabilityClass = "";
+
+    if (isFull) {
+      availabilityText = "Ausgebucht";
+      availabilityClass = "availability-full";
+    } else if (isAlmostFull) {
+      availabilityText = `Nur noch ${availableSpots} Plätze`;
+      availabilityClass = "availability-low";
+    }
+
+    const imageHtml = workshop.imageFilename
+      ? `<div class="workshop-card__image">
+           <img src="/uploads/${workshop.imageFilename}" alt="${escapeHtml(
+             workshop.title,
+           )}" loading="lazy">
+           ${
+             isFull
+               ? '<div class="workshop-card__badge">Ausgebucht</div>'
+               : ""
+           }
+         </div>`
+      : "";
+
+    card.innerHTML = `
+      ${imageHtml}
+      <div class="workshop-card__content">
+        <h3 class="workshop-card__title">${escapeHtml(workshop.title)}</h3>
+        <div class="workshop-card__meta">
+          <div class="meta-item">
+            <span class="icon">📅</span>
+            <span class="text">${formattedDate}</span>
+          </div>
+          <div class="meta-item">
+            <span class="icon">⏰</span>
+            <span class="text">${workshop.time} Uhr</span>
+          </div>
+          <div class="meta-item meta-item--price">
+            <span class="icon">💶</span>
+            <span class="text">${escapeHtml(workshop.price)}</span>
+          </div>
+        </div>
+        <p class="workshop-card__description">${escapeHtml(
+          shortDescription,
+        )}</p>
+        <div class="workshop-card__footer">
+          <div class="workshop-card__spots ${availabilityClass}">
+            <span class="status-dot"></span>
+            ${availabilityText}
+          </div>
+          <span class="workshop-card__cta">Details &amp; Buchen →</span>
+        </div>
+      </div>
+    `;
+
+    return card;
+  }
+
+  async function loadWorkshops() {
+    const container = document.getElementById(
+      "workshops-container",
+    ) as HTMLDivElement | null;
+    const noWorkshops = document.getElementById(
+      "no-workshops",
+    ) as HTMLDivElement | null;
+
+    if (!container || !noWorkshops) return;
+
+    try {
+      const response = await fetch("/api/workshops");
+      if (!response.ok) throw new Error("Failed to load workshops");
+
+      const workshops: Workshop[] = await response.json();
+
+      container.innerHTML = "";
+
+      if (!workshops.length) {
+        container.classList.add("hidden");
+        noWorkshops.classList.remove("hidden");
+        return;
+      }
+
+      noWorkshops.classList.add("hidden");
+      container.classList.remove("hidden");
+
+      workshops.forEach((workshop) => {
+        const card = createWorkshopCard(workshop);
+        container.appendChild(card);
+      });
+    } catch (error) {
+      console.error("Error loading workshops:", error);
+      container.innerHTML =
+        '<p class="workshops__error">Fehler beim Laden der Workshops.</p>';
+    }
+  }
+
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", loadWorkshops);
   } else {
@@ -411,7 +184,7 @@
     background-color: var(--color-soft-cream);
   }
 
-  .container {
+  .workshops .container {
     max-width: var(--max-width);
     margin: 0 auto;
   }
@@ -421,19 +194,19 @@
     color: var(--color-clay-brown);
     text-align: center;
     margin-bottom: var(--space-2);
-    font-size: 2.5rem;
+    font-size: 2.25rem;
   }
 
   .workshops__subtitle {
     text-align: center;
     color: var(--color-text-secondary);
     margin-bottom: var(--space-8);
-    font-size: 1.125rem;
+    font-size: 1.0625rem;
   }
 
   .workshops__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 360px));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: var(--space-6);
     justify-content: center;
   }
@@ -456,33 +229,31 @@
     display: none !important;
   }
 
-  /* Card Styles */
   .workshop-card {
-    background-color: var(--color-background);
-    border-radius: var(--radius);
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    transition:
-      transform var(--duration-normal) var(--easing),
-      box-shadow var(--duration-normal) var(--easing);
     display: flex;
     flex-direction: column;
-    cursor: pointer;
-    height: 100%;
+    background-color: var(--color-background);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
     border: 1px solid rgba(0, 0, 0, 0.03);
+    text-decoration: none;
+    color: inherit;
+    transition: transform var(--duration-normal) var(--easing),
+      box-shadow var(--duration-normal) var(--easing);
   }
 
   .workshop-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-lg);
   }
 
   .workshop-card__image {
+    position: relative;
     width: 100%;
     aspect-ratio: 4 / 3;
     overflow: hidden;
     background: var(--color-warm-beige);
-    position: relative;
   }
 
   .workshop-card__image img {
@@ -496,47 +267,25 @@
     transform: scale(1.05);
   }
 
-  .workshop-card__image--placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #e8dccf 0%, #d4a574 100%);
-  }
-
-  .workshop-card__image--placeholder svg {
-    color: rgba(255, 255, 255, 0.6);
-  }
-
   .workshop-card__badge {
     position: absolute;
     top: 1rem;
     right: 1rem;
     padding: 0.25rem 0.75rem;
-    border-radius: 20px;
+    border-radius: var(--radius-full);
     font-size: 0.875rem;
     font-weight: 600;
-    z-index: 2;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  .workshop-card__badge--full {
     background-color: rgba(255, 255, 255, 0.95);
     color: #dc3545;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   .workshop-card__content {
     padding: var(--space-6);
     display: flex;
     flex-direction: column;
+    gap: var(--space-4);
     flex: 1;
-  }
-
-  .workshop-card__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: var(--space-3);
-    margin-bottom: var(--space-4);
   }
 
   .workshop-card__title {
@@ -544,45 +293,35 @@
     color: var(--color-clay-brown);
     font-size: 1.35rem;
     margin: 0;
-    line-height: 1.3;
   }
 
-  .workshop-card__price {
-    font-weight: 700;
-    color: var(--color-terracotta);
-    font-size: 1.125rem;
-    white-space: nowrap;
-  }
-
-  .workshop-card__info {
+  .workshop-card__meta {
     display: flex;
-    gap: var(--space-4);
-    margin-bottom: var(--space-4);
+    flex-wrap: wrap;
+    gap: var(--space-3);
     color: var(--color-text-secondary);
     font-size: 0.9rem;
   }
 
-  .workshop-card__detail {
+  .meta-item {
     display: flex;
     align-items: center;
     gap: 0.5rem;
   }
 
-  .workshop-card__detail svg {
-    color: var(--color-terracotta);
-    opacity: 0.8;
+  .meta-item .icon {
+    font-size: 1.2rem;
+  }
+
+  .meta-item--price {
+    color: var(--color-accent);
+    font-weight: var(--font-weight-bold);
   }
 
   .workshop-card__description {
     color: var(--color-text-secondary);
     line-height: 1.6;
-    margin-bottom: var(--space-6);
-    flex: 1;
     font-size: 0.95rem;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
   }
 
   .workshop-card__footer {
@@ -637,350 +376,6 @@
     transform: translateX(4px);
   }
 
-  /* Workshop Detail Modal */
-  .workshop-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--space-4);
-  }
-
-  .workshop-modal__overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(43, 43, 43, 0.6);
-    backdrop-filter: blur(4px);
-    animation: fadeIn 0.3s ease;
-  }
-
-  .workshop-modal__content {
-    position: relative;
-    background: var(--color-background);
-    border-radius: var(--radius);
-    max-width: 900px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    animation: slideIn 0.3s ease;
-  }
-
-  .workshop-detail__grid {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  @media (min-width: 768px) {
-    .workshop-detail__grid {
-      grid-template-columns: 40% 60%;
-    }
-
-    .workshop-detail__image-wrapper {
-      height: 100%;
-      min-height: 400px;
-    }
-
-    .workshop-detail__image {
-      height: 100%;
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-  }
-
-  .workshop-detail__image-wrapper {
-    position: relative;
-    background: var(--color-warm-beige);
-    min-height: 250px;
-  }
-
-  .workshop-detail__image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .workshop-detail__content {
-    padding: var(--space-8);
-  }
-
-  .workshop-detail__title {
-    font-family: var(--font-serif);
-    color: var(--color-clay-brown);
-    font-size: 2rem;
-    margin-bottom: var(--space-4);
-    line-height: 1.2;
-  }
-
-  .workshop-detail__meta {
-    display: flex;
-    align-items: center;
-    gap: var(--space-4);
-    margin-bottom: var(--space-6);
-  }
-
-  .workshop-detail__price-tag {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--color-terracotta);
-  }
-
-  .workshop-detail__status {
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    background: var(--color-off-white);
-  }
-
-  .status-available {
-    color: #4caf50;
-    background: rgba(76, 175, 80, 0.1);
-  }
-
-  .status-full {
-    color: #dc3545;
-    background: rgba(220, 53, 69, 0.1);
-  }
-
-  .workshop-detail__info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: var(--space-4);
-    margin-bottom: var(--space-6);
-    padding: var(--space-4);
-    background: var(--color-off-white);
-    border-radius: var(--radius-sm);
-  }
-
-  .info-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .info-label {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--color-text-secondary);
-    opacity: 0.8;
-  }
-
-  .info-value {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 500;
-    color: var(--color-clay-brown);
-  }
-
-  .info-value svg {
-    color: var(--color-terracotta);
-  }
-
-  .workshop-detail__description {
-    margin-bottom: var(--space-8);
-  }
-
-  .workshop-detail__description h3 {
-    font-size: 1.1rem;
-    color: var(--color-clay-brown);
-    margin-bottom: var(--space-2);
-  }
-
-  .workshop-detail__description p {
-    color: var(--color-text-secondary);
-    line-height: 1.7;
-  }
-
-  .workshop-detail__booking {
-    margin-top: var(--space-4);
-    padding: var(--space-4);
-    background: var(--color-off-white);
-    border-radius: var(--radius-sm);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-  }
-
-  .workshop-detail__booking h3 {
-    font-family: var(--font-serif);
-    color: var(--color-clay-brown);
-    margin-bottom: var(--space-3);
-  }
-
-  .workshop-detail__booking-intro {
-    color: var(--color-text-secondary);
-    margin-bottom: var(--space-4);
-    font-size: 0.95rem;
-  }
-
-  .workshop-booking-form__grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-3);
-    margin-bottom: var(--space-3);
-  }
-
-  @media (min-width: 640px) {
-    .workshop-booking-form__grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  .form-group--full {
-    grid-column: 1 / -1;
-  }
-
-  .form-group {
-    margin-bottom: var(--space-3);
-  }
-
-  .form-group label {
-    display: block;
-    margin-bottom: var(--space-2);
-    font-weight: 500;
-    color: var(--color-clay-brown);
-  }
-
-  .form-group input,
-  .form-group textarea {
-    width: 100%;
-    padding: var(--space-3);
-    border: 2px solid var(--color-warm-beige);
-    border-radius: var(--radius);
-    font-family: var(--font-sans);
-    transition: border-color var(--duration-normal) var(--easing);
-  }
-
-  .form-group input:focus,
-  .form-group textarea:focus {
-    outline: none;
-    border-color: var(--color-clay-brown);
-  }
-
-  .workshop-booking-form__actions {
-    margin-top: var(--space-3);
-  }
-
-  .workshop-booking-form__hint {
-    margin-top: var(--space-2);
-    font-size: 0.85rem;
-    color: var(--color-text-secondary);
-  }
-
-  .workshop-booking-message {
-    margin-top: var(--space-3);
-    padding: var(--space-3);
-    border-radius: var(--radius-sm);
-    font-size: 0.9rem;
-    line-height: 1.4;
-    text-align: left;
-    border-left: 4px solid transparent;
-    background-color: var(--color-off-white);
-  }
-
-  .workshop-booking-message--success {
-    border-color: #2f855a;
-    color: #276749;
-  }
-
-  .workshop-booking-message--error {
-    border-color: #c53030;
-    color: #742a2a;
-  }
-
-  .workshop-modal__close {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: rgba(255, 255, 255, 0.9);
-    border: none;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    font-size: 1.5rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-    transition: all 0.2s;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    color: var(--color-charcoal);
-  }
-
-  .workshop-modal__close:hover {
-    background: white;
-    transform: scale(1.1);
-  }
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Button Styles */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2);
-    font-weight: 600;
-    border-radius: var(--radius);
-    border: none;
-    transition: all var(--duration-normal) var(--easing);
-    text-decoration: none;
-    white-space: nowrap;
-    min-height: 48px;
-    padding: 0 var(--space-6);
-    cursor: pointer;
-  }
-
-  .btn-primary {
-    background-color: var(--color-terracotta);
-    color: var(--color-off-white);
-    width: 100%;
-    font-size: 1.125rem;
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    background-color: var(--color-clay-brown);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-  }
-
-  .btn-primary:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-    opacity: 0.7;
-  }
-
-  /* Mobile Optimierungen */
   @media (max-width: 639px) {
     .workshops {
       padding: var(--space-8) var(--gutter);
@@ -990,17 +385,8 @@
       font-size: 2rem;
     }
 
-    .workshops__grid {
-      grid-template-columns: 1fr;
-      gap: var(--space-6);
-    }
-
-    .workshop-detail__content {
-      padding: var(--space-6);
-    }
-
-    .workshop-detail__title {
-      font-size: 1.5rem;
+    .workshop-card__content {
+      padding: var(--space-5);
     }
   }
 </style>
