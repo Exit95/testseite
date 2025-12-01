@@ -1143,36 +1143,59 @@ export const prerender = false;
       }
     });
 
-    // Chunk-Upload-Funktion
+    // Chunk-Upload-Funktion - ALLE Chunks in EINEM Request
     async function uploadFileInChunks(file: File, onProgress: (progress: number) => void) {
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
       const uniqueFilename = `${Date.now()}_${file.name}`;
 
+      const formData = new FormData();
+
+      // WICHTIG: Metadaten ZUERST anhängen!
+      formData.append('filename', uniqueFilename);
+      formData.append('totalChunks', String(totalChunks));
+      formData.append('fileSize', String(file.size));
+
+      // Dann alle Chunks anhängen
       for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
         const start = chunkIndex * CHUNK_SIZE;
         const end = Math.min(start + CHUNK_SIZE, file.size);
         const chunk = file.slice(start, end);
 
-        const formData = new FormData();
-        formData.append('chunkIndex', String(chunkIndex));
-        formData.append('totalChunks', String(totalChunks));
-        formData.append('filename', uniqueFilename);
-        formData.append('file', chunk);
+        // Chunks als chunk_0, chunk_1, etc.
+        formData.append(`chunk_${chunkIndex}`, chunk, `chunk_${chunkIndex}`);
 
+        // Progress während des Chunk-Erstellens
+        const progress = ((chunkIndex + 1) / totalChunks) * 50; // 50% für Vorbereitung
+        onProgress(progress);
+      }
+
+      // Upload mit Timeout (20 Minuten)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1200000); // 20 Min
+
+      try {
         const response = await fetch('/api/upload', {
           method: 'POST',
           headers: {
             'Authorization': `Basic ${authCredentials}`
           },
-          body: formData
+          body: formData,
+          signal: controller.signal
         });
 
+        clearTimeout(timeoutId);
+
         if (!response.ok) {
-          throw new Error('Chunk upload failed');
+          const error = await response.json();
+          throw new Error(error.error || 'Upload failed');
         }
 
-        const progress = ((chunkIndex + 1) / totalChunks) * 100;
-        onProgress(progress);
+        onProgress(100); // Upload abgeschlossen
+
+        return await response.json();
+      } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
       }
     }
 
