@@ -142,9 +142,9 @@
           </div>
           `;
 
-        // Click-Handler für die gesamte Karte
+        // Click-Handler für die gesamte Karte → führt jetzt zur Detailseite
         card.addEventListener("click", () => {
-          showWorkshopDetails(workshop);
+          window.location.href = `/workshops/${encodeURIComponent(workshop.id)}`;
         });
 
         container.appendChild(card);
