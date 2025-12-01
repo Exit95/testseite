@@ -1107,7 +1107,7 @@ export const prerender = false;
       const progressContainer = document.getElementById('upload-progress-container');
       const progressFill = document.getElementById('upload-progress-fill');
       const progressText = document.getElementById('upload-progress-text');
-      const uploadBtn = document.getElementById('upload-file-btn');
+      const uploadBtn = document.getElementById('upload-file-btn') as HTMLButtonElement;
 
       if (progressContainer) progressContainer.classList.remove('hidden');
       if (uploadBtn) uploadBtn.disabled = true;
@@ -1134,6 +1134,7 @@ export const prerender = false;
         if (progressText) progressText.textContent = '0%';
 
         // Galerie neu laden
+        await loadImageMetadata();
         await loadGallery();
       } catch (error) {
         console.error('Upload error:', error);
@@ -1522,9 +1523,11 @@ export const prerender = false;
         });
 
         if (response.ok) {
+          await loadImageMetadata();
           await loadGallery();
         } else {
-          alert('Fehler beim Löschen des Bildes');
+          const error = await response.json();
+          alert(error.error || 'Fehler beim Löschen des Bildes');
         }
       } catch (error) {
         console.error('Error deleting image:', error);
