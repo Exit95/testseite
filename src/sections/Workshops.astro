@@ -235,27 +235,122 @@
             <p>${escapeHtml(workshop.description)}</p>
           </div>
 
-          <div class="workshop-detail__actions">
-            <button class="btn btn-primary btn-book-workshop" data-workshop-id="${workshop.id}" ${isFull ? "disabled" : ""}>
-              ${isFull ? "Leider ausgebucht" : "Jetzt buchen"}
-            </button>
+          <div class="workshop-detail__booking">
+            <h3>Workshop buchen</h3>
+            <form id="workshop-booking-form" class="workshop-booking-form">
+              <div class="form-group">
+                <label for="workshop-name">Name *</label>
+                <input type="text" id="workshop-name" name="name" required />
+              </div>
+
+              <div class="form-group">
+                <label for="workshop-email">E-Mail *</label>
+                <input type="email" id="workshop-email" name="email" required />
+              </div>
+
+              <div class="form-group">
+                <label for="workshop-phone">Telefon</label>
+                <input type="tel" id="workshop-phone" name="phone" />
+              </div>
+
+              <div class="form-group">
+                <label for="workshop-participants">Anzahl Personen *</label>
+                <input
+                  type="number"
+                  id="workshop-participants"
+                  name="participants"
+                  min="1"
+                  max="${availableSpots}"
+                  value="1"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="workshop-notes">Anmerkungen</label>
+                <textarea id="workshop-notes" name="notes" rows="3"></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary" ${isFull ? "disabled" : ""}>
+                ${isFull ? "Leider ausgebucht" : "Jetzt verbindlich buchen"}
+              </button>
+              <p class="form-hint">
+                Ihre Anfrage wird an uns per E-Mail übermittelt. Sie erhalten eine Bestätigung.
+              </p>
+            </form>
+            <div id="workshop-booking-message" class="message hidden"></div>
           </div>
         </div>
       </div>
     `;
 
-    // Buchungs-Handler
-    if (!isFull) {
-      modalBody
-        .querySelector(".btn-book-workshop")
-        ?.addEventListener("click", () => {
-          closeModal();
-          // Scroll zum Buchungsformular
-          const bookingSection = document.getElementById("calendar-section");
-          if (bookingSection) {
-            bookingSection.scrollIntoView({ behavior: "smooth" });
+    const bookingForm = modalBody.querySelector(
+      "#workshop-booking-form",
+    ) as HTMLFormElement | null;
+    const messageEl = modalBody.querySelector(
+      "#workshop-booking-message",
+    ) as HTMLDivElement | null;
+
+    if (bookingForm && messageEl && !isFull) {
+      const submitBtn = bookingForm.querySelector(
+        'button[type="submit"]',
+      ) as HTMLButtonElement | null;
+
+      bookingForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        if (!submitBtn) return;
+
+        const originalText = submitBtn.textContent || "Jetzt verbindlich buchen";
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Wird gesendet...";
+
+        const formData = new FormData(bookingForm);
+        const payload = {
+          workshopId: workshop.id,
+          name: String(formData.get("name") || "").trim(),
+          email: String(formData.get("email") || "").trim(),
+          phone: String(formData.get("phone") || "").trim(),
+          participants: Number(formData.get("participants") || 1),
+          notes: String(formData.get("notes") || "").trim(),
+        };
+
+        messageEl.classList.remove("hidden");
+        messageEl.className = "message";
+
+        try {
+          const response = await fetch("/api/workshops/book", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          const result = await response.json().catch(() => ({}));
+
+          if (response.ok && result.success) {
+            messageEl.textContent =
+              "Vielen Dank! Ihre Buchungsanfrage wurde übermittelt. Sie erhalten in Kürze eine Bestätigung per E-Mail.";
+            messageEl.classList.add("success");
+            bookingForm.reset();
+          } else {
+            const errorMessage =
+              result.error ||
+              "Die Buchung konnte nicht durchgeführt werden. Bitte versuchen Sie es später erneut.";
+            messageEl.textContent = errorMessage;
+            messageEl.classList.add("error");
           }
-        });
+        } catch (error) {
+          console.error("Error booking workshop:", error);
+          messageEl.textContent =
+            "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut oder kontaktieren Sie uns direkt.";
+          messageEl.classList.add("error");
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
+        }
+      });
     }
 
     modal.classList.remove("hidden");

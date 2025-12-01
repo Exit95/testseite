@@ -1,37 +1,45 @@
 ---
 import { content } from '../data/content';
 import ProductModal from '../components/ProductModal.astro';
+import fs from 'fs';
+import path from 'path';
 
-// Produktgalerien - hier kannst du weitere Bilder hinzufügen
+// Funktion zum automatischen Laden aller Bilder aus einem Ordner
+function getImagesFromFolder(folderPath: string, mainImage: string): string[] {
+  const publicDir = path.join(process.cwd(), 'public');
+  const fullPath = path.join(publicDir, folderPath);
+
+  // Hauptbild immer zuerst
+  const images = [mainImage];
+
+  try {
+    if (fs.existsSync(fullPath)) {
+      const files = fs.readdirSync(fullPath);
+      const imageFiles = files
+        .filter(file => /\.(jpeg|jpg|png|webp)$/i.test(file))
+        .sort() // Alphabetisch sortiert
+        .map(file => `${folderPath}/${file}`);
+
+      images.push(...imageFiles);
+    }
+  } catch (error) {
+    console.warn(`Konnte Ordner ${folderPath} nicht lesen:`, error);
+  }
+
+  return images;
+}
+
+// Produktgalerien - Bilder werden automatisch aus den Ordnern geladen
+// Um neue Bilder hinzuzufügen, lege sie einfach in den entsprechenden Ordner:
+// - Tassen: public/products/tassen/
+// - Teller: public/products/teller/
+// - Spardosen: public/products/spardosen/
+// - Weihnachtsanhänger: public/products/anhaenger/
 const productGalleries: Record<string, string[]> = {
-  'Tassen': [
-    '/becher.jpeg',
-    '/products/tassen/tassen1.jpeg',
-    '/products/tassen/tassen2.jpeg',
-    '/products/tassen/tassen5.jpeg',
-    '/products/tassen/tassen6.jpeg',
-    '/products/tassen/tassen7.jpeg',
-    '/products/tassen/tassen8.jpeg',
-  ],
-  'Teller': [
-    '/teller.jpeg',
-    '/products/teller/teller1.jpeg',
-    '/products/teller/teller4.jpeg',
-    '/products/teller/teller6.jpeg',
-  ],
-  'Spardosen & Krüge & Boxen': [
-    '/spardose.jpeg',
-    '/products/spardosen/spardosen.jpeg',
-    '/products/spardosen/dosen1.jpeg',
-    '/products/spardosen/Krug1.jpeg',
-    '/products/spardosen/Krug2.jpeg',
-  ],
-  'Weihnachtsanhänger': [
-    '/anhänger.png',
-    '/products/anhaenger/anhänger2.png',
-    '/products/anhaenger/anhänger3.png',
-    '/products/anhaenger/anhänger4.png',
-  ],
+  'Tassen': getImagesFromFolder('products/tassen', '/becher.jpeg'),
+  'Teller': getImagesFromFolder('products/teller', '/teller.jpeg'),
+  'Spardosen & Krüge & Boxen': getImagesFromFolder('products/spardosen', '/spardose.jpeg'),
+  'Weihnachtsanhänger': getImagesFromFolder('products/anhaenger', '/anhänger.png'),
 };
 ---
 

@@ -200,6 +200,17 @@ export const prerender = false;
         <section class="gallery-upload-section">
           <h2>Bild hochladen</h2>
           <div class="upload-area">
+            <div class="form-group">
+              <label for="upload-category-select">Kategorie auswählen</label>
+              <select id="upload-category-select" class="category-select">
+                <option value="">-- Kategorie wählen --</option>
+                <option value="tassen">Tassen</option>
+                <option value="teller">Teller</option>
+                <option value="spardosen">Spardosen & Krüge & Boxen</option>
+                <option value="anhaenger">Weihnachtsanhänger</option>
+              </select>
+              <small class="form-hint">Das Bild wird in den Ordner public/products/[kategorie]/ hochgeladen</small>
+            </div>
             <input type="file" id="gallery-file-input" accept="image/*" style="display: none;">
             <button type="button" class="btn btn-primary" id="select-file-btn">Bild auswählen</button>
             <button type="button" class="btn btn-success hidden" id="upload-file-btn">Upload starten</button>
@@ -1146,6 +1157,15 @@ export const prerender = false;
     document.getElementById('upload-file-btn')?.addEventListener('click', async () => {
       if (!selectedFile) return;
 
+      // Kategorie prüfen
+      const categorySelect = document.getElementById('upload-category-select') as HTMLSelectElement;
+      const category = categorySelect?.value;
+
+      if (!category) {
+        alert('Bitte wähle zuerst eine Kategorie aus!');
+        return;
+      }
+
       const progressContainer = document.getElementById('upload-progress-container');
       const progressFill = document.getElementById('upload-progress-fill');
       const progressText = document.getElementById('upload-progress-text');
@@ -1155,12 +1175,12 @@ export const prerender = false;
       if (uploadBtn) uploadBtn.disabled = true;
 
       try {
-        await uploadFileInChunks(selectedFile, (progress) => {
+        await uploadFileInChunks(selectedFile, category, (progress) => {
           if (progressFill) progressFill.style.width = `${progress}%`;
           if (progressText) progressText.textContent = `${Math.round(progress)}%`;
         });
 
-        alert('Upload erfolgreich!');
+        alert(`Upload erfolgreich! Bild wurde in Kategorie "${category}" gespeichert.`);
 
         // Reset
         selectedFile = null;
@@ -1186,11 +1206,12 @@ export const prerender = false;
     });
 
     // Chunk-Upload-Funktion - ALLE Chunks in EINEM Request
-    async function uploadFileInChunks(file: File, onProgress: (progress: number) => void) {
+    async function uploadFileInChunks(file: File, category: string, onProgress: (progress: number) => void) {
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
       const uniqueFilename = `${Date.now()}_${file.name}`;
 
       console.log(`📦 Starting upload: ${file.name}`);
+      console.log(`   Category: ${category}`);
       console.log(`   Size: ${formatFileSize(file.size)}`);
       console.log(`   Chunks: ${totalChunks}`);
       console.log(`   Unique filename: ${uniqueFilename}`);
@@ -1199,6 +1220,7 @@ export const prerender = false;
 
       // WICHTIG: Metadaten ZUERST anhängen!
       formData.append('filename', uniqueFilename);
+      formData.append('category', category);
       formData.append('totalChunks', String(totalChunks));
       formData.append('fileSize', String(file.size));
 

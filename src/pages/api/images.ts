@@ -4,13 +4,27 @@ import fs from 'fs';
 import path from 'path';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
+const PUBLIC_DIR = path.join(process.cwd(), 'public');
+const PRODUCTS_DIR = path.join(PUBLIC_DIR, 'products');
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+
+// Verfügbare Kategorien
+const VALID_CATEGORIES = ['tassen', 'teller', 'spardosen', 'anhaenger'];
 
 // Sicherstellen, dass Upload-Verzeichnis existiert
 function ensureUploadDir() {
   if (!fs.existsSync(UPLOAD_DIR)) {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true });
   }
+}
+
+// Sicherstellen, dass Kategorie-Verzeichnis existiert
+function ensureCategoryDir(category: string) {
+  const categoryDir = path.join(PRODUCTS_DIR, category);
+  if (!fs.existsSync(categoryDir)) {
+    fs.mkdirSync(categoryDir, { recursive: true });
+  }
+  return categoryDir;
 }
 
 // Authentifizierung
@@ -104,12 +118,15 @@ export const POST: APIRoute = async ({ request }) => {
     });
 
     let filename: string | null = null;
+    let category: string | null = null;
     const chunks: { index: number; buffer: Buffer }[] = [];
 
     // 1. Metadaten sammeln (kommen ZUERST)
     bb.on('field', (fieldname, val) => {
       if (fieldname === 'filename') {
         filename = val;
+      } else if (fieldname === 'category') {
+        category = val;
       }
       // totalChunks und fileSize werden nur für Logging verwendet
     });
@@ -155,6 +172,22 @@ export const POST: APIRoute = async ({ request }) => {
           return;
         }
 
+        if (!category) {
+          resolve(new Response(JSON.stringify({ error: 'Missing category' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          }));
+          return;
+        }
+
+        if (!VALID_CATEGORIES.includes(category)) {
+          resolve(new Response(JSON.stringify({ error: `Invalid category. Must be one of: ${VALID_CATEGORIES.join(', ')}` }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          }));
+          return;
+        }
+
         if (chunks.length === 0) {
           resolve(new Response(JSON.stringify({ error: 'No chunks received' }), {
             status: 400,
@@ -169,16 +202,21 @@ export const POST: APIRoute = async ({ request }) => {
         // Alle Chunks zu einem Buffer zusammenfügen
         const finalBuffer = Buffer.concat(chunks.map(c => c.buffer));
 
-        // Datei speichern
-        const filepath = path.join(UPLOAD_DIR, filename);
+        // Kategorie-Verzeichnis sicherstellen
+        const categoryDir = ensureCategoryDir(category);
+
+        // Datei in Kategorie-Ordner speichern
+        const filepath = path.join(categoryDir, filename);
         fs.writeFileSync(filepath, finalBuffer);
 
-        console.log(`Upload complete: ${filename} (${finalBuffer.length} bytes, ${chunks.length} chunks)`);
+        console.log(`Upload complete: ${filename} → ${category}/ (${finalBuffer.length} bytes, ${chunks.length} chunks)`);
 
         resolve(new Response(JSON.stringify({
           success: true,
           message: 'Upload complete',
           filename: filename,
+          category: category,
+          path: `/products/${category}/${filename}`,
           size: finalBuffer.length,
           chunks: chunks.length
         }), {

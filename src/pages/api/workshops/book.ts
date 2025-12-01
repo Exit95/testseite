@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import fs from 'fs/promises';
 import path from 'path';
+import nodemailer from 'nodemailer';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const WORKSHOP_BOOKINGS_FILE = path.join(DATA_DIR, 'workshop-bookings.json');
@@ -122,29 +123,156 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    // Erstelle Buchung
-    const newBooking: WorkshopBooking = {
-      id: `wb_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-      workshopId,
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      phone: phone?.trim(),
-      participants,
-      notes: notes?.trim(),
-      createdAt: new Date().toISOString(),
-      status: 'pending',
-    };
+	    // Erstelle Buchung
+	    const newBooking: WorkshopBooking = {
+	      id: `wb_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+	      workshopId,
+	      name: name.trim(),
+	      email: email.trim().toLowerCase(),
+	      phone: phone?.trim(),
+	      participants,
+	      notes: notes?.trim(),
+	      createdAt: new Date().toISOString(),
+	      status: 'pending',
+	    };
+	
+	    bookings.push(newBooking);
+	    await saveWorkshopBookings(bookings);
 
-    bookings.push(newBooking);
-    await saveWorkshopBookings(bookings);
+	    // E-Mail-Adressen wie bei /api/booking.ts
+	    const bookingEmail = import.meta.env.BOOKING_EMAIL || 'keramik-auszeit@web.de';
+	    const fromEmail = import.meta.env.FROM_EMAIL || 'buchungen@auszeit-keramik.de';
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      booking: newBooking 
-    }), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' }
-    });
+	    // E-Mail-Inhalte vorbereiten
+	    const adminSubject = `Neue Workshop-Buchung: ${workshop.title} - ${name}`;
+	    const customerSubject = `Workshop-Buchungsanfrage eingegangen - ${workshop.title}`;
+
+	    const adminHtml = `
+	      <h2>Neue Workshop-Buchung</h2>
+	      <p><strong>Workshop:</strong> ${workshop.title}</p>
+	      <p><strong>Datum:</strong> ${workshop.date}</p>
+	      <p><strong>Uhrzeit:</strong> ${workshop.time} Uhr</p>
+	      <p><strong>Preis:</strong> ${workshop.price}</p>
+	      <hr />
+	      <p><strong>Name:</strong> ${name}</p>
+	      <p><strong>E-Mail:</strong> ${email}</p>
+	      <p><strong>Telefon:</strong> ${phone || 'Nicht angegeben'}</p>
+	      <p><strong>Teilnehmer:</strong> ${participants}</p>
+	      <p><strong>Notizen:</strong> ${notes || 'Keine'}</p>
+	    `;
+
+	    const adminText = `
+	Neue Workshop-Buchung
+
+	Workshop: ${workshop.title}
+	Datum: ${workshop.date}
+	Uhrzeit: ${workshop.time} Uhr
+	Preis: ${workshop.price}
+
+	Name: ${name}
+	E-Mail: ${email}
+	Telefon: ${phone || 'Nicht angegeben'}
+	Teilnehmer: ${participants}
+	Notizen: ${notes || 'Keine'}
+	    `;
+
+	    const customerHtml = `
+	      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+	        <h2 style="color: #8B6F47;">Vielen Dank f&uuml;r Ihre Workshop-Buchungsanfrage!</h2>
+	        <p>Liebe/r ${name},</p>
+	        <p>wir haben Ihre Buchungsanfrage f&uuml;r den Workshop <strong>${workshop.title}</strong> erhalten.</p>
+	        <p>Sie erhalten eine <strong>separate E-Mail mit der endg&uuml;ltigen Best&auml;tigung</strong>, sobald wir Ihren Platz best&auml;tigt haben.</p>
+
+	        <div style="background-color: #F5F0E8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+	          <h3 style="color: #8B6F47; margin-top: 0;">Ihre Angaben:</h3>
+	          <p><strong>Workshop:</strong> ${workshop.title}</p>
+	          <p><strong>Datum:</strong> ${workshop.date}</p>
+	          <p><strong>Uhrzeit:</strong> ${workshop.time} Uhr</p>
+	          <p><strong>Teilnehmer:</strong> ${participants}</p>
+	          ${notes ? `<p><strong>Ihre Notizen:</strong> ${notes}</p>` : ''}
+	        </div>
+
+	        <p>Bei Fragen oder &Auml;nderungsw&uuml;nschen k&ouml;nnen Sie uns gerne kontaktieren:</p>
+	        <p>
+	          4e7 E-Mail: ${bookingEmail}<br />
+	        </p>
+
+	        <p style="margin-top: 30px;">Herzliche Gr&uuml;&szlig;e,<br />
+	        <strong>Irena Woschkowiak</strong><br />
+	        Atelier Auszeit</p>
+	      </div>
+	    `;
+
+	    const customerText = `
+	Vielen Dank f&uuml;r Ihre Workshop-Buchungsanfrage!
+
+	Liebe/r ${name},
+
+	wir haben Ihre Buchungsanfrage f&uuml;r den Workshop "${workshop.title}" erhalten.
+	Sie erhalten eine separate E-Mail mit der endg&uuml;ltigen Best&auml;tigung, sobald wir Ihren Platz best&auml;tigt haben.
+
+	Ihre Angaben:
+	  Workshop: ${workshop.title}
+	  Datum: ${workshop.date}
+	  Uhrzeit: ${workshop.time} Uhr
+	  Teilnehmer: ${participants}
+	  ${notes ? `Notizen: ${notes}` : ''}
+
+	Kontakt:
+	  E-Mail: ${bookingEmail}
+
+	Herzliche Gr&uuml;&szlig;e,
+	Irena Woschkowiak
+	Atelier Auszeit
+	    `;
+
+	    // E-Mail-Versand nur, wenn SMTP konfiguriert ist
+	    if (import.meta.env.SMTP_HOST && import.meta.env.SMTP_USER && import.meta.env.SMTP_PASS) {
+	      try {
+	        const transporter = nodemailer.createTransport({
+	          host: import.meta.env.SMTP_HOST,
+	          port: parseInt(import.meta.env.SMTP_PORT || '587'),
+	          secure: import.meta.env.SMTP_PORT === '465',
+	          auth: {
+	            user: import.meta.env.SMTP_USER,
+	            pass: import.meta.env.SMTP_PASS,
+	          },
+	          tls: {
+	            rejectUnauthorized: false,
+	          },
+	        });
+
+	        await transporter.verify();
+
+	        // Admin-Mail
+	        await transporter.sendMail({
+	          from: `"Atelier Auszeit - Irena Woschkowiak" <${fromEmail}>`,
+	          to: bookingEmail,
+	          subject: adminSubject,
+	          text: adminText,
+	          html: adminHtml,
+	        });
+
+	        // Kunden-Mail
+	        await transporter.sendMail({
+	          from: `"Atelier Auszeit - Irena Woschkowiak" <${fromEmail}>`,
+	          to: email,
+	          subject: customerSubject,
+	          text: customerText,
+	          html: customerHtml,
+	        });
+	      } catch (mailError) {
+	        console.error('Error sending workshop booking emails:', mailError);
+	      }
+	    }
+
+	    return new Response(JSON.stringify({ 
+	      success: true, 
+	      booking: newBooking 
+	    }), {
+	      status: 201,
+	      headers: { 'Content-Type': 'application/json' }
+	    });
   } catch (error) {
     console.error('Error creating workshop booking:', error);
     return new Response(JSON.stringify({ error: 'Failed to create booking' }), {
