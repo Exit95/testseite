@@ -1,5 +1,10 @@
 ---
+import WorkshopCard from "../components/WorkshopCard.astro";
 import WorkshopModal from "../components/WorkshopModal.astro";
+import { getWorkshops } from "../lib/storage";
+
+const workshops = await getWorkshops();
+const activeWorkshops = workshops.filter((w) => w.active);
 ---
 
 <section id="workshops" class="workshops animate-on-scroll">
@@ -9,16 +14,20 @@ import WorkshopModal from "../components/WorkshopModal.astro";
       Entdecken Sie unsere kreativen Keramik-Workshops
     </p>
 
-    <div id="workshops-loading" class="workshops__loading">
-      Lade Workshops...
-    </div>
-
-    <div id="workshops-grid" class="workshops__grid" style="display: none;">
-      <!-- Workshops werden hier dynamisch eingefügt -->
-    </div>
-
-    <div id="workshops-empty" class="workshops__empty" style="display: none;">
-      Aktuell sind keine Workshops verfügbar.
+    <div id="workshops-container">
+      {
+        activeWorkshops.length > 0 ? (
+          <div class="workshops__grid">
+            {activeWorkshops.map((workshop) => (
+              <WorkshopCard workshop={workshop} />
+            ))}
+          </div>
+        ) : (
+          <div class="workshops__empty">
+            Aktuell sind keine Workshops verfügbar.
+          </div>
+        )
+      }
     </div>
   </div>
 </section>
@@ -26,114 +35,43 @@ import WorkshopModal from "../components/WorkshopModal.astro";
 <WorkshopModal />
 
 <script>
-  // Workshops laden und rendern (client-seitig)
-  async function loadWorkshops() {
-    const loadingEl = document.getElementById("workshops-loading");
-    const gridEl = document.getElementById("workshops-grid");
-    const emptyEl = document.getElementById("workshops-empty");
+  // Auto-Reload: Nur den Workshop-Container alle 10 Sekunden aktualisieren
+  let isReloading = false;
+
+  async function reloadWorkshops() {
+    if (isReloading) return;
+    isReloading = true;
+
+    const container = document.getElementById("workshops-container");
+    if (!container) {
+      isReloading = false;
+      return;
+    }
 
     try {
-      const response = await fetch("/api/workshops");
+      const response = await fetch("/api/workshops-html");
       if (!response.ok) throw new Error("Failed to load workshops");
 
-      const workshops = await response.json();
-      const activeWorkshops = workshops.filter((w: any) => w.active);
+      const html = await response.text();
 
-      // Loading verstecken
-      if (loadingEl) loadingEl.style.display = "none";
-
-      if (activeWorkshops.length === 0) {
-        if (emptyEl) emptyEl.style.display = "block";
-        return;
-      }
-
-      // Grid anzeigen und Karten einfügen
-      if (gridEl) {
-        gridEl.style.display = "grid";
-        gridEl.innerHTML = "";
-
-        activeWorkshops.forEach((workshop: any) => {
-          const cardHTML = createWorkshopCardHTML(workshop);
-          gridEl.insertAdjacentHTML("beforeend", cardHTML);
-        });
+      // Nur aktualisieren, wenn sich der Inhalt geändert hat
+      if (container.innerHTML.trim() !== html.trim()) {
+        container.innerHTML = html;
       }
     } catch (error) {
-      console.error("Error loading workshops:", error);
-      if (loadingEl) {
-        loadingEl.textContent = "Fehler beim Laden der Workshops.";
-      }
+      console.error("Error reloading workshops:", error);
+    } finally {
+      isReloading = false;
     }
   }
 
-  // Workshop-Karte HTML erstellen - EXAKT wie WorkshopCard.astro
-  function createWorkshopCardHTML(workshop: any): string {
-    const currentParticipants = workshop.currentParticipants ?? 0;
-    const availableSpots = workshop.maxParticipants - currentParticipants;
-    const isFull = availableSpots <= 0;
-
-    const imageUrl = workshop.imageFilename
-      ? `/uploads/${workshop.imageFilename}`
-      : "/becher.jpeg";
-
-    const location = workshop.location || "Atelier Auszeit, Feldstiege 6a, Gronau";
-
-    // Datum formatieren
-    const date = new Date(workshop.date + "T00:00:00");
-    const day = date.getDate();
-    const month = date.toLocaleDateString("de-DE", { month: "short" });
-
-    // Badge erstellen
-    const badgeLabel = isFull ? "Ausgebucht" : `${availableSpots} Plätze frei`;
-    const badgeVariant = isFull ? "sold" : "available";
-    const badgeHTML = `<span class="badge badge--${badgeVariant} workshop-badge">${escapeHtml(badgeLabel)}</span>`;
-
-    // HTML zusammenbauen - EXAKT wie in WorkshopCard.astro
-    return `
-      <article class="workshop-card" data-workshop-id="${workshop.id}">
-        <div class="card-link">
-          <div class="card-image">
-            <img src="${imageUrl}" alt="${escapeHtml(workshop.title)}" loading="lazy" />
-            ${badgeHTML}
-            <div class="card-date">
-              <span class="day">${day}</span>
-              <span class="month">${month}</span>
-            </div>
-          </div>
-          <div class="card-content">
-            <h3>${escapeHtml(workshop.title)}</h3>
-            <div class="card-meta">
-              <span>⏰ ${workshop.time} Uhr</span>
-              <span>📍 ${escapeHtml(location)}</span>
-            </div>
-            <p class="description">${escapeHtml(workshop.description)}</p>
-            <div class="card-footer">
-              <span class="price">${workshop.price}</span>
-              <span class="btn-text">Details & Buchung →</span>
-            </div>
-          </div>
-        </div>
-      </article>
-    `;
-  }
-
-  function escapeHtml(text: string): string {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
-  // Beim Laden der Seite
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", loadWorkshops);
-  } else {
-    loadWorkshops();
-  }
+  // Alle 10 Sekunden neu laden
+  setInterval(reloadWorkshops, 10000);
 </script>
 
 <script src="../scripts/workshop-modal.js"></script>
 
 <style>
-  /* Section Styles */
   .workshops {
     padding: var(--space-12) var(--gutter);
     background-color: var(--color-soft-cream);
@@ -159,7 +97,6 @@ import WorkshopModal from "../components/WorkshopModal.astro";
     font-size: 1rem;
   }
 
-  .workshops__loading,
   .workshops__empty {
     text-align: center;
     color: var(--color-text-secondary);
@@ -184,183 +121,6 @@ import WorkshopModal from "../components/WorkshopModal.astro";
     }
   }
 
-  /* Workshop Card Styles - EXAKT aus WorkshopCard.astro kopiert */
-  .workshop-card {
-    background: var(--color-background);
-    border-radius: var(--radius);
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    transition:
-      transform var(--duration-normal) var(--easing),
-      box-shadow var(--duration-normal) var(--easing);
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    cursor: pointer;
-  }
-
-  .workshop-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  }
-
-  .card-link {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-  }
-
-  .card-image {
-    position: relative;
-    aspect-ratio: 4 / 3;
-    overflow: hidden;
-    background-color: var(--color-warm-beige);
-  }
-
-  .card-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.4s ease;
-  }
-
-  .workshop-card:hover .card-image img {
-    transform: scale(1.05);
-  }
-
-  /* Badge Styles - EXAKT aus Badge.astro kopiert */
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.25rem 0.625rem;
-    border-radius: var(--radius-full);
-    font-size: 0.6875rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-  }
-
-  .badge--sold {
-    background-color: #dc2626;
-    color: white;
-  }
-
-  .badge--available {
-    background-color: #16a34a;
-    color: white;
-  }
-
-  .badge--warning {
-    background-color: #f59e0b;
-    color: white;
-  }
-
-  .workshop-badge {
-    position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
-    z-index: 1;
-  }
-
-  .card-date {
-    position: absolute;
-    bottom: 0.75rem;
-    left: 0.75rem;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 0.375rem 0.625rem;
-    border-radius: var(--radius-sm);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    min-width: 3rem;
-  }
-
-  .card-date .day {
-    font-size: 1.125rem;
-    font-weight: 700;
-    line-height: 1;
-    color: var(--color-text-primary);
-  }
-
-  .card-date .month {
-    font-size: 0.625rem;
-    text-transform: uppercase;
-    color: var(--color-text-secondary);
-    margin-top: 0.125rem;
-    letter-spacing: 0.025em;
-  }
-
-  .card-content {
-    padding: 1.25rem;
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-  }
-
-  .card-content h3 {
-    margin: 0 0 0.75rem;
-    font-size: 1.125rem;
-    line-height: 1.3;
-    color: var(--color-clay-brown);
-    font-family: var(--font-serif);
-  }
-
-  .card-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-    margin-bottom: 0.875rem;
-    font-size: 0.8125rem;
-    color: var(--color-text-secondary);
-  }
-
-  .card-meta span {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-  }
-
-  .description {
-    color: var(--color-text-secondary);
-    font-size: 0.875rem;
-    line-height: 1.5;
-    margin-bottom: 1rem;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .card-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: auto;
-    padding-top: 0.875rem;
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
-  }
-
-  .price {
-    font-weight: 600;
-    color: var(--color-terracotta);
-    font-size: 1rem;
-  }
-
-  .btn-text {
-    color: var(--color-clay-brown);
-    font-weight: 500;
-    font-size: 0.8125rem;
-    transition: transform 0.2s ease;
-  }
-
-  .workshop-card:hover .btn-text {
-    transform: translateX(3px);
-  }
-
-  /* Responsive */
   @media (max-width: 639px) {
     .workshops {
       padding: var(--space-8) var(--gutter);
