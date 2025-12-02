@@ -102,12 +102,12 @@ import WorkshopModal from "../components/WorkshopModal.astro";
           <div class="card-content">
             <h3>${escapeHtml(workshop.title)}</h3>
             <div class="card-meta">
-              <span>⏰ ${escapeHtml(workshop.time)} Uhr</span>
+              <span>⏰ ${workshop.time} Uhr</span>
               <span>📍 ${escapeHtml(location)}</span>
             </div>
             <p class="description">${escapeHtml(workshop.description)}</p>
             <div class="card-footer">
-              <span class="price">${escapeHtml(workshop.price)}</span>
+              <span class="price">${workshop.price}</span>
               <span class="btn-text">Details & Buchung →</span>
             </div>
           </div>
