@@ -43,27 +43,34 @@ const productGalleries: Record<string, string[]> = {
 };
 ---
 
-<section class="offerings">
+<section class="offerings" id="angebote" aria-labelledby="offerings-title">
   <div class="container">
-    <h2 class="offerings__title">{content.offerings.title}</h2>
-    <div class="offerings__grid">
+    <h2 id="offerings-title" class="offerings__title">{content.offerings.title}</h2>
+    <div class="offerings__grid" role="list">
       {
-        content.offerings.items.map((item) => (
-          <div
+        content.offerings.items.map((item, index) => (
+          <article
             class="offering-card"
+            role="listitem"
             data-product-name={item.name}
             data-product-price={item.price}
             data-product-images={JSON.stringify(productGalleries[item.name] || [item.image])}
           >
             <div class="offering-card__image">
-              <img src={item.image} alt={item.name} loading="lazy" />
+              <img
+                src={item.image}
+                alt={`${item.name} – Keramik bemalen im Atelier Auszeit Gronau`}
+                loading={index < 2 ? "eager" : "lazy"}
+                width="400"
+                height="400"
+              />
             </div>
             <div class="offering-card__content">
               <h3 class="offering-card__name">{item.name}</h3>
-              <p class="offering-card__price">{item.price}</p>
-              <span class="offering-card__hint">Klicken für mehr Bilder</span>
+              <p class="offering-card__price" aria-label={`Preis: ${item.price}`}>{item.price}</p>
+              <span class="offering-card__hint" aria-hidden="true">Klicken für mehr Bilder</span>
             </div>
-          </div>
+          </article>
         ))
       }
     </div>

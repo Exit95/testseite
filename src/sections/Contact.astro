@@ -3,15 +3,17 @@ import WhatsAppLink from "../components/WhatsAppLink.astro";
 import { content } from "../data/content";
 ---
 
-<section class="contact">
+<section class="contact" id="kontakt" aria-labelledby="contact-title">
   <div class="container">
-    <h2 class="contact__title">{content.contact.title}</h2>
+    <h2 id="contact-title" class="contact__title">{content.contact.title}</h2>
     <div class="contact__grid">
-      <div class="contact__info">
+      <address class="contact__info">
         <div class="contact__block">
           <h3>Adresse</h3>
-          <p>{content.contact.address.street}</p>
-          <p>{content.contact.address.city}</p>
+          <p itemprop="streetAddress">{content.contact.address.street}</p>
+          <p>
+            <span itemprop="postalCode">48599</span> <span itemprop="addressLocality">{content.contact.address.city}</span>
+          </p>
         </div>
           <div class="contact__block">
             <h3>Parkmöglichkeiten</h3>
@@ -24,10 +26,10 @@ import { content } from "../data/content";
         <div class="contact__block">
           <h3>Kontakt</h3>
           <p>
-            <a href={`tel:${content.contact.phone}`}>{content.contact.phone}</a>
+            <a href={`tel:${content.contact.phone}`} itemprop="telephone" aria-label="Telefonnummer anrufen">{content.contact.phone}</a>
           </p>
           <p>
-            <a href={`mailto:${content.contact.email}`}
+            <a href={`mailto:${content.contact.email}`} itemprop="email" aria-label="E-Mail senden"
               >{content.contact.email}</a
             >
           </p>
@@ -39,7 +41,7 @@ import { content } from "../data/content";
             />
           </div>
         </div>
-      </div>
+      </address>
       <div class="contact__map">
         <iframe
           src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2444.9517364026356!2d7.039116876952842!3d52.20792455928731!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47b83e5bd7ba24d9%3A0xe587407671767893!2sFeldstiege%206A%2C%2048599%20Gronau%20(Westfalen)!5e0!3m2!1sde!2sde!4v1764054745840!5m2!1sde!2sde"
@@ -48,6 +50,8 @@ import { content } from "../data/content";
           style="border:0;"
           allowfullscreen=""
           loading="lazy"
+          title="Google Maps Karte – Standort Atelier Auszeit in Gronau"
+          aria-label="Interaktive Karte mit Standort des Ateliers"
           referrerpolicy="no-referrer-when-downgrade"
           title="Google Maps - Atelier Auszeit, Feldstiege 6a, 48599 Gronau"
         ></iframe>

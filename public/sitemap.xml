@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  
+  <!-- Hauptseite -->
+  <url>
+    <loc>https://keramik-auszeit.de/</loc>
+    <lastmod>2025-12-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    
+    <!-- Bilder für Image SEO -->
+    <image:image>
+      <image:loc>https://keramik-auszeit.de/becher.jpeg</image:loc>
+      <image:title>Keramik Tassen bemalen</image:title>
+      <image:caption>Individuell bemalte Keramiktassen im Atelier Auszeit</image:caption>
+    </image:image>
+    
+    <image:image>
+      <image:loc>https://keramik-auszeit.de/teller.jpeg</image:loc>
+      <image:title>Keramik Teller bemalen</image:title>
+      <image:caption>Handbemalte Keramikteller aus Gronau</image:caption>
+    </image:image>
+    
+    <image:image>
+      <image:loc>https://keramik-auszeit.de/spardose.jpeg</image:loc>
+      <image:title>Keramik Spardosen</image:title>
+      <image:caption>Kreative Spardosen und Krüge aus Keramik</image:caption>
+    </image:image>
+    
+    <image:image>
+      <image:loc>https://keramik-auszeit.de/anhänger.png</image:loc>
+      <image:title>Weihnachtsanhänger aus Keramik</image:title>
+      <image:caption>Handgefertigte Weihnachtsanhänger</image:caption>
+    </image:image>
+  </url>
+  
+</urlset>
+

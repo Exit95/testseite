@@ -1,0 +1,18 @@
+# robots.txt für Atelier Auszeit - Keramik Malatelier
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://keramik-auszeit.de/sitemap.xml
+
+# Crawl-delay (optional, für höfliche Bots)
+Crawl-delay: 1
+
+# Blockiere Admin-Bereich
+Disallow: /admin
+Disallow: /api/
+
+# Blockiere Upload-Ordner
+Disallow: /uploads/
+

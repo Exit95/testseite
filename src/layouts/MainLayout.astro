@@ -4,10 +4,23 @@ import Modal from "../components/Modal.astro";
 interface Props {
   title: string;
   description: string;
+  keywords?: string;
+  ogImage?: string;
+  canonicalUrl?: string;
 }
 
-const { title, description } = Astro.props;
-const url = Astro.site || "https://auszeit-keramik.de";
+const {
+  title,
+  description,
+  keywords = "Keramik bemalen, Malatelier, Gronau, Keramik Workshops, Kreativ, Handarbeit, Töpfern, Keramikmalerei",
+  ogImage = "/og-image.jpg",
+  canonicalUrl
+} = Astro.props;
+
+const siteUrl = "https://keramik-auszeit.de";
+const currentUrl = canonicalUrl || Astro.url.pathname;
+const fullUrl = new URL(currentUrl, siteUrl).href;
+const fullOgImage = new URL(ogImage, siteUrl).href;
 ---
 
 <!doctype html>
@@ -18,44 +31,153 @@ const url = Astro.site || "https://auszeit-keramik.de";
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Primary Meta Tags -->
     <title>{title}</title>
+    <meta name="title" content={title} />
     <meta name="description" content={description} />
+    <meta name="keywords" content={keywords} />
+    <meta name="author" content="Irena Woschkowiak" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="German" />
+    <meta name="revisit-after" content="7 days" />
     <meta name="generator" content={Astro.generator} />
 
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content={url} />
+    <meta property="og:url" content={fullUrl} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={`${url}/og-image.jpg`} />
+    <meta property="og:image" content={fullOgImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="de_DE" />
+    <meta property="og:site_name" content="Atelier Auszeit – Keramik Malatelier" />
 
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content={url} />
+    <meta name="twitter:url" content={fullUrl} />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={`${url}/og-image.jpg`} />
+    <meta name="twitter:image" content={fullOgImage} />
 
-    <link rel="canonical" href={url} />
+    <!-- Canonical URL -->
+    <link rel="canonical" href={fullUrl} />
 
-    <script type="application/ld+json">
+    <!-- Geo Tags -->
+    <meta name="geo.region" content="DE-NW" />
+    <meta name="geo.placename" content="Gronau" />
+    <meta name="geo.position" content="52.2111;7.0264" />
+    <meta name="ICBM" content="52.2111, 7.0264" />
+
+    <!-- Structured Data / Schema.org -->
+    <script type="application/ld+json" is:inline>
       {
         "@context": "https://schema.org",
-        "@type": "LocalBusiness",
-        "name": "Atelier Auszeit",
-        "description": "Keramik bemalen in ruhiger Atmosphäre. Termine nach Vereinbarung.",
-        "url": "https://auszeit-keramik.de",
-        "telephone": "+49 176 34255005",
-        "owner": {
-          "@type": "Person",
-          "name": "Irena Woschkowiak"
-        },
-        "address": {
-          "@type": "PostalAddress",
-          "streetAddress": "Feldstiege 6a",
-          "addressLocality": "Gronau",
-          "postalCode": "48599",
-          "addressCountry": "DE"
-        },
-        "priceRange": "€€"
+        "@graph": [
+          {
+            "@type": "LocalBusiness",
+            "@id": "https://keramik-auszeit.de/#business",
+            "name": "Atelier Auszeit – Keramik Malatelier",
+            "alternateName": "Keramik Auszeit",
+            "description": "Keramik bemalen in ruhiger Atmosphäre in Gronau. Kreative Workshops, Kindergeburtstage und individuelle Termine. Große Auswahl an Keramik: Tassen, Teller, Spardosen und mehr.",
+            "url": "https://keramik-auszeit.de",
+            "telephone": "+49 176 34255005",
+            "email": "keramik-auszeit@web.de",
+            "image": "https://keramik-auszeit.de/og-image.jpg",
+            "priceRange": "€€",
+            "paymentAccepted": "Cash, EC-Card",
+            "currenciesAccepted": "EUR",
+            "openingHoursSpecification": {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+              "opens": "10:00",
+              "closes": "18:00"
+            },
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "Feldstiege 6a",
+              "addressLocality": "Gronau",
+              "addressRegion": "Nordrhein-Westfalen",
+              "postalCode": "48599",
+              "addressCountry": "DE"
+            },
+            "geo": {
+              "@type": "GeoCoordinates",
+              "latitude": "52.2111",
+              "longitude": "7.0264"
+            },
+            "owner": {
+              "@type": "Person",
+              "name": "Irena Woschkowiak",
+              "jobTitle": "Inhaberin"
+            },
+            "areaServed": {
+              "@type": "GeoCircle",
+              "geoMidpoint": {
+                "@type": "GeoCoordinates",
+                "latitude": "52.2111",
+                "longitude": "7.0264"
+              },
+              "geoRadius": "50000"
+            },
+            "hasOfferCatalog": {
+              "@type": "OfferCatalog",
+              "name": "Keramik Angebote",
+              "itemListElement": [
+                {
+                  "@type": "Offer",
+                  "itemOffered": {
+                    "@type": "Service",
+                    "name": "Keramik bemalen",
+                    "description": "Individuelles Keramik bemalen in entspannter Atmosphäre"
+                  }
+                },
+                {
+                  "@type": "Offer",
+                  "itemOffered": {
+                    "@type": "Service",
+                    "name": "Workshops",
+                    "description": "Kreative Keramik-Workshops für Gruppen"
+                  }
+                },
+                {
+                  "@type": "Offer",
+                  "itemOffered": {
+                    "@type": "Service",
+                    "name": "Kindergeburtstage",
+                    "description": "Unvergessliche Kindergeburtstage mit Keramik bemalen"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://keramik-auszeit.de/#website",
+            "url": "https://keramik-auszeit.de",
+            "name": "Atelier Auszeit – Keramik Malatelier",
+            "description": "Keramik bemalen in Gronau",
+            "publisher": {
+              "@id": "https://keramik-auszeit.de/#business"
+            },
+            "inLanguage": "de-DE"
+          },
+          {
+            "@type": "WebPage",
+            "@id": "https://keramik-auszeit.de/#webpage",
+            "url": "https://keramik-auszeit.de",
+            "name": "Atelier Auszeit – Keramik Malatelier in Gronau | Irena Woschkowiak",
+            "isPartOf": {
+              "@id": "https://keramik-auszeit.de/#website"
+            },
+            "about": {
+              "@id": "https://keramik-auszeit.de/#business"
+            },
+            "description": "Keramik bemalen in ruhiger Atmosphäre. Jetzt Termin sichern bei Irena Woschkowiak.",
+            "inLanguage": "de-DE"
+          }
+        ]
       }
     </script>
   </head>
