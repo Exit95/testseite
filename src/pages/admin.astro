@@ -40,6 +40,7 @@ export const prerender = false;
       <button class="admin-nav__btn active" data-tab="termine">Termine</button>
       <button class="admin-nav__btn" data-tab="workshops">Workshops</button>
       <button class="admin-nav__btn" data-tab="galerie">Galerie</button>
+      <button class="admin-nav__btn" data-tab="bewertungen">Bewertungen</button>
     </nav>
 
 	    		<main class="admin-main">
@@ -263,6 +264,40 @@ export const prerender = false;
         </section>
       </div>
       <!-- Ende Tab: Galerie -->
+
+      <!-- Tab: Bewertungen -->
+      <div id="tab-bewertungen" class="admin-tab hidden">
+        <section class="reviews-section">
+          <h2>Kundenbewertungen verwalten</h2>
+
+          <div class="reviews-stats">
+            <div class="stat-card">
+              <div class="stat-label">Wartend</div>
+              <div class="stat-value" id="reviews-pending-count">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Freigegeben</div>
+              <div class="stat-value" id="reviews-approved-count">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Gesamt</div>
+              <div class="stat-value" id="reviews-total-count">0</div>
+            </div>
+          </div>
+
+          <div class="reviews-filter">
+            <button class="filter-btn active" data-filter="all">Alle</button>
+            <button class="filter-btn" data-filter="pending">Wartend</button>
+            <button class="filter-btn" data-filter="approved">Freigegeben</button>
+          </div>
+
+          <div id="reviews-loading" class="loading">Lade Bewertungen...</div>
+          <div id="reviews-list" class="reviews-admin-list hidden"></div>
+          <div id="no-reviews" class="no-data hidden">Keine Bewertungen vorhanden</div>
+        </section>
+      </div>
+      <!-- Ende Tab: Bewertungen -->
+
 	    </main>
   </div>
 
@@ -891,6 +926,8 @@ export const prerender = false;
             loadCategories();
             loadImageMetadata();
             loadGallery();
+          } else if (tabName === 'bewertungen') {
+            loadReviews();
           }
         }
       });
@@ -1852,6 +1889,192 @@ export const prerender = false;
       if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
       return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
     }
+
+    // ========================================
+    // BEWERTUNGEN TAB
+    // ========================================
+
+    let currentReviewFilter = 'all';
+    let allReviews: any[] = [];
+
+    async function loadReviews() {
+      const loadingEl = document.getElementById('reviews-loading');
+      const listEl = document.getElementById('reviews-list');
+      const noDataEl = document.getElementById('no-reviews');
+
+      if (loadingEl) loadingEl.style.display = 'block';
+      if (listEl) listEl.classList.add('hidden');
+      if (noDataEl) noDataEl.classList.add('hidden');
+
+      try {
+        const response = await fetch('/api/reviews?all=true', {
+          headers: {
+            'Authorization': `Basic ${authCredentials}`
+          }
+        });
+
+        if (!response.ok) throw new Error('Fehler beim Laden');
+
+        allReviews = await response.json();
+        updateReviewStats();
+        displayReviews();
+      } catch (error) {
+        console.error('Fehler beim Laden der Bewertungen:', error);
+        if (noDataEl) {
+          noDataEl.textContent = 'Fehler beim Laden der Bewertungen';
+          noDataEl.classList.remove('hidden');
+        }
+      } finally {
+        if (loadingEl) loadingEl.style.display = 'none';
+      }
+    }
+
+    function updateReviewStats() {
+      const pending = allReviews.filter(r => !r.approved).length;
+      const approved = allReviews.filter(r => r.approved).length;
+      const total = allReviews.length;
+
+      const pendingEl = document.getElementById('reviews-pending-count');
+      const approvedEl = document.getElementById('reviews-approved-count');
+      const totalEl = document.getElementById('reviews-total-count');
+
+      if (pendingEl) pendingEl.textContent = pending.toString();
+      if (approvedEl) approvedEl.textContent = approved.toString();
+      if (totalEl) totalEl.textContent = total.toString();
+    }
+
+    function displayReviews() {
+      const listEl = document.getElementById('reviews-list');
+      const noDataEl = document.getElementById('no-reviews');
+
+      if (!listEl || !noDataEl) return;
+
+      let filteredReviews = allReviews;
+      if (currentReviewFilter === 'pending') {
+        filteredReviews = allReviews.filter(r => !r.approved);
+      } else if (currentReviewFilter === 'approved') {
+        filteredReviews = allReviews.filter(r => r.approved);
+      }
+
+      if (filteredReviews.length === 0) {
+        listEl.classList.add('hidden');
+        noDataEl.classList.remove('hidden');
+        noDataEl.textContent = 'Keine Bewertungen in dieser Kategorie';
+        return;
+      }
+
+      listEl.innerHTML = filteredReviews.map(review => `
+        <div class="review-admin-card ${review.approved ? 'approved' : 'pending'}">
+          <div class="review-admin-header">
+            <div>
+              <strong>${escapeHtml(review.name)}</strong>
+              <span class="review-stars">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</span>
+            </div>
+            <div class="review-date">${new Date(review.date).toLocaleDateString('de-DE')}</div>
+          </div>
+          <div class="review-admin-comment">${escapeHtml(review.comment)}</div>
+          <div class="review-admin-actions">
+            <span class="review-status ${review.approved ? 'status-approved' : 'status-pending'}">
+              ${review.approved ? '✓ Freigegeben' : '⏳ Wartend'}
+            </span>
+            ${!review.approved ? `
+              <button class="btn btn-success btn-sm" onclick="approveReview('${review.id}')">Freigeben</button>
+            ` : `
+              <button class="btn btn-warning btn-sm" onclick="unapproveReview('${review.id}')">Zurückziehen</button>
+            `}
+            <button class="btn btn-danger btn-sm" onclick="deleteReview('${review.id}')">Löschen</button>
+          </div>
+        </div>
+      `).join('');
+
+      listEl.classList.remove('hidden');
+      noDataEl.classList.add('hidden');
+    }
+
+    async function approveReview(id: string) {
+      try {
+        const response = await fetch('/api/reviews', {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Basic ${authCredentials}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id, approved: true })
+        });
+
+        if (response.ok) {
+          await loadReviews();
+        } else {
+          alert('Fehler beim Freigeben der Bewertung');
+        }
+      } catch (error) {
+        console.error('Fehler:', error);
+        alert('Fehler beim Freigeben der Bewertung');
+      }
+    }
+
+    async function unapproveReview(id: string) {
+      try {
+        const response = await fetch('/api/reviews', {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Basic ${authCredentials}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id, approved: false })
+        });
+
+        if (response.ok) {
+          await loadReviews();
+        } else {
+          alert('Fehler beim Zurückziehen der Bewertung');
+        }
+      } catch (error) {
+        console.error('Fehler:', error);
+        alert('Fehler beim Zurückziehen der Bewertung');
+      }
+    }
+
+    async function deleteReview(id: string) {
+      if (!confirm('Bewertung wirklich löschen?')) return;
+
+      try {
+        const response = await fetch(`/api/reviews?id=${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Basic ${authCredentials}`
+          }
+        });
+
+        if (response.ok) {
+          await loadReviews();
+        } else {
+          alert('Fehler beim Löschen der Bewertung');
+        }
+      } catch (error) {
+        console.error('Fehler:', error);
+        alert('Fehler beim Löschen der Bewertung');
+      }
+    }
+
+    // Filter-Buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        const filter = target.dataset.filter || 'all';
+
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        target.classList.add('active');
+
+        currentReviewFilter = filter;
+        displayReviews();
+      });
+    });
+
+    // Globale Funktionen für onclick-Handler
+    (window as any).approveReview = approveReview;
+    (window as any).unapproveReview = unapproveReview;
+    (window as any).deleteReview = deleteReview;
   </script>
 </body>
 </html>
