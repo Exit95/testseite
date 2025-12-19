@@ -89,49 +89,107 @@
   }
 
   .review-card {
-    background: var(--color-soft-cream);
-    padding: var(--space-4);
-    border-radius: var(--radius-base);
-    box-shadow: var(--shadow);
-    transition: var(--transition-base);
-    border: 1px solid var(--color-border);
+    background: white;
+    padding: var(--space-5);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    transition: all var(--duration-normal) var(--easing);
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .review-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--color-terracotta) 0%, var(--color-clay-brown) 100%);
   }
 
   .review-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-6px);
     box-shadow: var(--shadow-lg);
+    border-color: var(--color-warm-beige);
   }
 
-  .review-header {
+  .review-card__header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--space-3);
-    flex-wrap: wrap;
-    gap: var(--space-2);
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
   }
 
-  .review-name {
+  .review-card__avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-terracotta) 0%, var(--color-clay-brown) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: var(--shadow);
+  }
+
+  .review-card__initial {
+    color: white;
+    font-size: 1.5rem;
+    font-weight: var(--font-weight-bold);
+    font-family: var(--font-serif);
+  }
+
+  .review-card__info {
+    flex: 1;
+  }
+
+  .review-card__name {
     font-weight: var(--font-weight-bold);
     color: var(--color-clay-brown);
     font-size: var(--font-size-lg);
+    margin-bottom: var(--space-1);
+    font-family: var(--font-serif);
   }
 
-  .review-stars {
+  .review-card__stars {
     color: var(--color-terracotta);
-    font-size: var(--font-size-xl);
+    font-size: 1.25rem;
+    letter-spacing: 2px;
   }
 
-  .review-date {
+  .review-card__date {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
     color: var(--color-text-tertiary);
     font-size: var(--font-size-sm);
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--space-4);
+    padding-left: var(--space-2);
   }
 
-  .review-comment {
+  .review-card__icon {
+    opacity: 0.6;
+  }
+
+  .review-card__comment {
     color: var(--color-text-primary);
-    line-height: 1.6;
-    font-style: italic;
+    line-height: 1.8;
+    font-size: 1rem;
+    position: relative;
+    padding: var(--space-4);
+    background: var(--color-soft-cream);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--color-warm-beige);
+  }
+
+  .review-card__quote {
+    position: absolute;
+    top: var(--space-2);
+    left: var(--space-2);
+    opacity: 0.15;
+    color: var(--color-terracotta);
   }
 
   .loading {
@@ -384,12 +442,30 @@
       
       container.innerHTML = reviews.map((review: any) => `
         <div class="review-card">
-          <div class="review-header">
-            <span class="review-name">${escapeHtml(review.name)}</span>
-            <span class="review-stars">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</span>
+          <div class="review-card__header">
+            <div class="review-card__avatar">
+              <span class="review-card__initial">${escapeHtml(review.name.charAt(0).toUpperCase())}</span>
+            </div>
+            <div class="review-card__info">
+              <div class="review-card__name">${escapeHtml(review.name)}</div>
+              <div class="review-card__stars">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</div>
+            </div>
           </div>
-          <div class="review-date">${new Date(review.date).toLocaleDateString('de-DE')}</div>
-          <div class="review-comment">"${escapeHtml(review.comment)}"</div>
+          <div class="review-card__date">
+            <svg class="review-card__icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            ${new Date(review.date).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })}
+          </div>
+          <div class="review-card__comment">
+            <svg class="review-card__quote" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"/>
+            </svg>
+            ${escapeHtml(review.comment)}
+          </div>
         </div>
       `).join('');
     } catch (error) {
