@@ -89,207 +89,49 @@
   }
 
   .review-card {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(107, 91, 83, 0.08);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-    border: 1px solid rgba(217, 201, 185, 0.2);
-  }
-
-  .review-card::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(177, 115, 92, 0.03) 0%, rgba(107, 91, 83, 0.03) 100%);
-    pointer-events: none;
-  }
-
-  .review-card__decoration {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 6px;
-    background: linear-gradient(90deg, var(--color-terracotta) 0%, var(--color-clay-brown) 50%, var(--color-terracotta) 100%);
-    background-size: 200% 100%;
-    animation: shimmer 3s ease-in-out infinite;
-  }
-
-  @keyframes shimmer {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
+    background: var(--color-soft-cream);
+    padding: var(--space-4);
+    border-radius: var(--radius-base);
+    box-shadow: var(--shadow);
+    transition: var(--transition-base);
+    border: 1px solid var(--color-border);
   }
 
   .review-card:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 12px 40px rgba(107, 91, 83, 0.15);
-    border-color: var(--color-warm-beige);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
   }
 
-  .review-card__content {
-    padding: var(--space-6);
-    position: relative;
-    z-index: 1;
-  }
-
-  .review-card__header {
+  .review-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: var(--space-4);
-    margin-bottom: var(--space-5);
+    margin-bottom: var(--space-3);
+    flex-wrap: wrap;
+    gap: var(--space-2);
   }
 
-  .review-card__avatar {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--color-terracotta) 0%, var(--color-clay-brown) 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(177, 115, 92, 0.3);
-    position: relative;
-    animation: float 3s ease-in-out infinite;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-4px); }
-  }
-
-  .review-card__avatar-ring {
-    position: absolute;
-    top: -4px;
-    left: -4px;
-    right: -4px;
-    bottom: -4px;
-    border-radius: 50%;
-    border: 2px solid var(--color-terracotta);
-    opacity: 0.3;
-  }
-
-  .review-card__initial {
-    color: white;
-    font-size: 1.75rem;
-    font-weight: var(--font-weight-bold);
-    font-family: var(--font-serif);
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  }
-
-  .review-card__info {
-    flex: 1;
-  }
-
-  .review-card__name {
+  .review-name {
     font-weight: var(--font-weight-bold);
     color: var(--color-clay-brown);
-    font-size: 1.25rem;
-    margin-bottom: var(--space-1);
-    font-family: var(--font-serif);
-    letter-spacing: 0.3px;
+    font-size: var(--font-size-lg);
   }
 
-  .review-card__meta {
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
+  .review-stars {
+    color: var(--color-terracotta);
+    font-size: var(--font-size-xl);
+  }
+
+  .review-date {
     color: var(--color-text-tertiary);
-    font-size: 0.875rem;
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-2);
   }
 
-  .review-card__icon {
-    opacity: 0.5;
-  }
-
-  .review-card__rating {
-    margin-bottom: var(--space-5);
-    padding: var(--space-3) var(--space-4);
-    background: linear-gradient(135deg, rgba(177, 115, 92, 0.05) 0%, rgba(107, 91, 83, 0.05) 100%);
-    border-radius: var(--radius-sm);
-    display: inline-flex;
-    flex-direction: column;
-    gap: var(--space-2);
-  }
-
-  .review-card__stars {
-    display: flex;
-    gap: 4px;
-  }
-
-  .review-card__star {
-    color: #E0E0E0;
-    transition: all 0.3s ease;
-  }
-
-  .review-card__star.filled {
-    color: var(--color-terracotta);
-    filter: drop-shadow(0 2px 4px rgba(177, 115, 92, 0.3));
-  }
-
-  .review-card__rating-text {
-    font-size: 0.8125rem;
-    color: var(--color-text-tertiary);
-    font-weight: 500;
-  }
-
-  .review-card__comment {
-    position: relative;
-    padding: var(--space-5);
-    background: var(--color-soft-cream);
-    border-radius: var(--radius);
-    margin-bottom: var(--space-4);
-    border: 1px solid rgba(217, 201, 185, 0.3);
-  }
-
-  .review-card__quote-left {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    opacity: 0.1;
-    color: var(--color-terracotta);
-  }
-
-  .review-card__quote-right {
-    position: absolute;
-    bottom: 12px;
-    right: 12px;
-    opacity: 0.1;
-    color: var(--color-terracotta);
-  }
-
-  .review-card__text {
+  .review-comment {
     color: var(--color-text-primary);
-    line-height: 1.8;
-    font-size: 1rem;
-    margin: 0;
-    position: relative;
-    z-index: 1;
+    line-height: 1.6;
     font-style: italic;
-  }
-
-  .review-card__footer {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding-top: var(--space-3);
-    border-top: 1px solid rgba(217, 201, 185, 0.3);
-  }
-
-  .review-card__verified {
-    color: #27ae60;
-    flex-shrink: 0;
-  }
-
-  .review-card__verified-text {
-    font-size: 0.8125rem;
-    color: #27ae60;
-    font-weight: 500;
   }
 
   .loading {
@@ -484,33 +326,6 @@
       padding: var(--space-4);
     }
 
-    .review-card__content {
-      padding: var(--space-4);
-    }
-
-    .review-card__avatar {
-      width: 52px;
-      height: 52px;
-    }
-
-    .review-card__initial {
-      font-size: 1.5rem;
-    }
-
-    .review-card__name {
-      font-size: 1.125rem;
-    }
-
-    .review-card__comment {
-      padding: var(--space-4);
-    }
-
-    .review-card__quote-left,
-    .review-card__quote-right {
-      width: 24px;
-      height: 24px;
-    }
-
     .btn {
       font-size: 0.9375rem;
       padding: 0 var(--space-3);
@@ -534,10 +349,6 @@
     .reviews-grid {
       grid-template-columns: 1fr;
     }
-
-    .review-card__content {
-      padding: var(--space-5);
-    }
   }
 
   @media (max-width: 639px) {
@@ -552,18 +363,6 @@
 
     .btn--large {
       min-height: 48px;
-    }
-
-    .review-card__header {
-      gap: var(--space-3);
-    }
-
-    .review-card__rating {
-      width: 100%;
-    }
-
-    .review-card__text {
-      font-size: 0.9375rem;
     }
   }
 </style>
@@ -585,54 +384,12 @@
       
       container.innerHTML = reviews.map((review: any) => `
         <div class="review-card">
-          <div class="review-card__decoration"></div>
-          <div class="review-card__content">
-            <div class="review-card__header">
-              <div class="review-card__avatar">
-                <span class="review-card__initial">${escapeHtml(review.name.charAt(0).toUpperCase())}</span>
-                <div class="review-card__avatar-ring"></div>
-              </div>
-              <div class="review-card__info">
-                <div class="review-card__name">${escapeHtml(review.name)}</div>
-                <div class="review-card__meta">
-                  <svg class="review-card__icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                  </svg>
-                  ${new Date(review.date).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })}
-                </div>
-              </div>
-            </div>
-
-            <div class="review-card__rating">
-              <div class="review-card__stars">
-                ${Array.from({length: 5}, (_, i) => `
-                  <svg class="review-card__star ${i < review.rating ? 'filled' : ''}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="${i < review.rating ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                  </svg>
-                `).join('')}
-              </div>
-              <div class="review-card__rating-text">${review.rating} von 5 Sternen</div>
-            </div>
-
-            <div class="review-card__comment">
-              <svg class="review-card__quote-left" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"/>
-              </svg>
-              <p class="review-card__text">${escapeHtml(review.comment)}</p>
-              <svg class="review-card__quote-right" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18 7h-3l-2 4v6h6v-6h-3zm-8 0H7L5 11v6h6v-6h-3z"/>
-              </svg>
-            </div>
-
-            <div class="review-card__footer">
-              <svg class="review-card__verified" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
-              <span class="review-card__verified-text">Verifizierte Bewertung</span>
-            </div>
+          <div class="review-header">
+            <span class="review-name">${escapeHtml(review.name)}</span>
+            <span class="review-stars">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</span>
           </div>
+          <div class="review-date">${new Date(review.date).toLocaleDateString('de-DE')}</div>
+          <div class="review-comment">"${escapeHtml(review.comment)}"</div>
         </div>
       `).join('');
     } catch (error) {
