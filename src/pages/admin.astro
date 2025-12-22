@@ -425,7 +425,10 @@ export const prerender = false;
 	          // Vorhandenen Termin aktualisieren
 	          const updatePayload = {
 	            id: editingSlotId,
-	            ...baseData
+	            ...baseData,
+	            initialBooked: isSpecialEvent
+	              ? formData.get('maxCapacity') // Alles gebucht bei Spezial-Events
+	              : (formData.get('initialBooked') || '0')
 	          };
 
 	          response = await fetch('/api/admin/slots', {
@@ -908,11 +911,11 @@ export const prerender = false;
 	      if (eventTypeHint) eventTypeHint.classList.toggle('hidden', !isSpecialEvent);
 	      if (initialBookedGroup) initialBookedGroup.classList.toggle('hidden', isSpecialEvent);
 
-	      // Bereits gebuchte Plätze nur anzeigen, nicht bearbeitbar
+	      // Bereits gebuchte Plätze anzeigen und bearbeitbar lassen
 	      const bookedCount = slot.maxCapacity - slot.available;
 	      if (initialBookedInput) {
 	        initialBookedInput.value = String(bookedCount);
-	        initialBookedInput.disabled = true;
+	        initialBookedInput.disabled = false; // Bearbeitbar lassen
 	      }
 
 	      if (titleEl) titleEl.textContent = 'Termin bearbeiten';

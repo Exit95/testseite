@@ -160,7 +160,7 @@ export const PUT: APIRoute = async ({ request }) => {
 
 	try {
 		const body = await request.json();
-		const { id, date, time, startTime, endTime, maxCapacity, eventType } = body as any;
+		const { id, date, time, startTime, endTime, maxCapacity, eventType, initialBooked } = body as any;
 
 		if (!id) {
 			return new Response(JSON.stringify({ error: 'Missing slot ID' }), {
@@ -212,7 +212,17 @@ export const PUT: APIRoute = async ({ request }) => {
 				});
 			}
 
-			const alreadyBooked = existing.maxCapacity - existing.available;
+			// Wenn initialBooked übergeben wird, verwende diesen Wert, sonst den bestehenden
+			let alreadyBooked: number;
+			if (typeof initialBooked !== 'undefined' && initialBooked !== null) {
+				alreadyBooked = parseInt(String(initialBooked), 10);
+				if (Number.isNaN(alreadyBooked) || alreadyBooked < 0) {
+					alreadyBooked = 0;
+				}
+			} else {
+				alreadyBooked = existing.maxCapacity - existing.available;
+			}
+
 			if (newMax < alreadyBooked) {
 				return new Response(
 					JSON.stringify({
@@ -228,6 +238,23 @@ export const PUT: APIRoute = async ({ request }) => {
 
 			updates.maxCapacity = newMax;
 			updates.available = newMax - alreadyBooked;
+		} else if (typeof initialBooked !== 'undefined' && initialBooked !== null) {
+			// Nur initialBooked geändert, maxCapacity bleibt gleich
+			const alreadyBooked = parseInt(String(initialBooked), 10);
+			if (!Number.isNaN(alreadyBooked) && alreadyBooked >= 0) {
+				if (existing.maxCapacity < alreadyBooked) {
+					return new Response(
+						JSON.stringify({
+							error: 'Gebuchte Plätze können nicht größer als maximale Kapazität sein.',
+						}),
+						{
+							status: 400,
+							headers: { 'Content-Type': 'application/json' },
+						},
+					);
+				}
+				updates.available = existing.maxCapacity - alreadyBooked;
+			}
 		}
 
 		const updatedSlot = await updateTimeSlot(id, updates);
