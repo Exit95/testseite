@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import busboy from 'busboy';
 import fs from 'fs';
 import path from 'path';
+import { isS3Configured, uploadToS3, deleteFromS3, listS3Objects, getContentType } from '../../lib/s3-storage';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
@@ -55,61 +56,93 @@ export const GET: APIRoute = async ({ request }) => {
   try {
     const imageFiles: any[] = [];
 
-    // Durchsuche alle Kategorie-Ordner
-    for (const category of VALID_CATEGORIES) {
-      const categoryDir = path.join(PRODUCTS_DIR, category);
+    // S3 Modus
+    if (isS3Configured()) {
+      // Bilder aus S3 laden
+      for (const category of VALID_CATEGORIES) {
+        const s3Objects = await listS3Objects(`products/${category}/`);
+        const categoryImages = s3Objects
+          .filter(obj => {
+            const ext = obj.key.split('.').pop()?.toLowerCase();
+            return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext || '');
+          })
+          .map(obj => ({
+            filename: obj.key.split('/').pop() || '',
+            category: category,
+            path: obj.url,
+            size: obj.size,
+            created: obj.lastModified,
+            modified: obj.lastModified
+          }));
+        imageFiles.push(...categoryImages);
+      }
 
-      if (fs.existsSync(categoryDir)) {
-        const files = fs.readdirSync(categoryDir);
+      // Uploads aus S3
+      const uploadObjects = await listS3Objects('uploads/');
+      const uploadImages = uploadObjects
+        .filter(obj => {
+          const ext = obj.key.split('.').pop()?.toLowerCase();
+          return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext || '');
+        })
+        .map(obj => ({
+          filename: obj.key.split('/').pop() || '',
+          category: 'uploads',
+          path: obj.url,
+          size: obj.size,
+          created: obj.lastModified,
+          modified: obj.lastModified
+        }));
+      imageFiles.push(...uploadImages);
 
-        // Filtere nur Bilddateien
-        const categoryImages = files.filter(file => {
+    } else {
+      // Lokaler Modus (Fallback)
+      for (const category of VALID_CATEGORIES) {
+        const categoryDir = path.join(PRODUCTS_DIR, category);
+
+        if (fs.existsSync(categoryDir)) {
+          const files = fs.readdirSync(categoryDir);
+          const categoryImages = files.filter(file => {
+            const ext = path.extname(file).toLowerCase();
+            return ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext);
+          }).map(file => {
+            const filePath = path.join(categoryDir, file);
+            const stats = fs.statSync(filePath);
+            return {
+              filename: file,
+              category: category,
+              path: `/products/${category}/${file}`,
+              size: stats.size,
+              created: stats.birthtime,
+              modified: stats.mtime
+            };
+          });
+          imageFiles.push(...categoryImages);
+        }
+      }
+
+      if (fs.existsSync(UPLOAD_DIR)) {
+        const files = fs.readdirSync(UPLOAD_DIR);
+        const uploadImages = files.filter(file => {
           const ext = path.extname(file).toLowerCase();
-          return ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext);
+          return ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext) && file !== 'temp';
         }).map(file => {
-          const filePath = path.join(categoryDir, file);
+          const filePath = path.join(UPLOAD_DIR, file);
           const stats = fs.statSync(filePath);
-
           return {
             filename: file,
-            category: category,
-            path: `/products/${category}/${file}`,
+            category: 'uploads',
+            path: `/uploads/${file}`,
             size: stats.size,
             created: stats.birthtime,
             modified: stats.mtime
           };
         });
-
-        imageFiles.push(...categoryImages);
+        imageFiles.push(...uploadImages);
       }
     }
 
-    // Auch alte Bilder aus uploads/ Ordner einbeziehen (falls vorhanden)
-    if (fs.existsSync(UPLOAD_DIR)) {
-      const files = fs.readdirSync(UPLOAD_DIR);
-
-      const uploadImages = files.filter(file => {
-        const ext = path.extname(file).toLowerCase();
-        return ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext) && file !== 'temp';
-      }).map(file => {
-        const filePath = path.join(UPLOAD_DIR, file);
-        const stats = fs.statSync(filePath);
-
-        return {
-          filename: file,
-          category: 'uploads',
-          path: `/uploads/${file}`,
-          size: stats.size,
-          created: stats.birthtime,
-          modified: stats.mtime
-        };
-      });
-
-      imageFiles.push(...uploadImages);
-    }
-
     // Sortiere nach Erstellungsdatum (neueste zuerst)
-    imageFiles.sort((a, b) => b.created.getTime() - a.created.getTime());
+    imageFiles.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
 
     return new Response(JSON.stringify(imageFiles), {
       status: 200,
@@ -232,21 +265,29 @@ export const POST: APIRoute = async ({ request }) => {
         // Alle Chunks zu einem Buffer zusammenfügen
         const finalBuffer = Buffer.concat(chunks.map(c => c.buffer));
 
-        // Kategorie-Verzeichnis sicherstellen
-        const categoryDir = ensureCategoryDir(category);
+        let resultPath: string;
 
-        // Datei in Kategorie-Ordner speichern
-        const filepath = path.join(categoryDir, filename);
-        fs.writeFileSync(filepath, finalBuffer);
-
-        console.log(`Upload complete: ${filename} → ${category}/ (${finalBuffer.length} bytes, ${chunks.length} chunks)`);
+        // S3 Upload wenn konfiguriert
+        if (isS3Configured()) {
+          const s3Key = `products/${category}/${filename}`;
+          const contentTypeHeader = getContentType(filename);
+          resultPath = await uploadToS3(finalBuffer, s3Key, contentTypeHeader);
+          console.log(`S3 Upload complete: ${filename} → ${s3Key} (${finalBuffer.length} bytes)`);
+        } else {
+          // Lokaler Upload (Fallback)
+          const categoryDir = ensureCategoryDir(category);
+          const filepath = path.join(categoryDir, filename);
+          fs.writeFileSync(filepath, finalBuffer);
+          resultPath = `/products/${category}/${filename}`;
+          console.log(`Upload complete: ${filename} → ${category}/ (${finalBuffer.length} bytes, ${chunks.length} chunks)`);
+        }
 
         resolve(new Response(JSON.stringify({
           success: true,
           message: 'Upload complete',
           filename: filename,
           category: category,
-          path: `/products/${category}/${filename}`,
+          path: resultPath,
           size: finalBuffer.length,
           chunks: chunks.length
         }), {
@@ -287,7 +328,7 @@ export const POST: APIRoute = async ({ request }) => {
   });
 };
 
-// DELETE - Bild löschen (aus Kategorie-Ordnern oder uploads/)
+// DELETE - Bild löschen (aus Kategorie-Ordnern, uploads/ oder S3)
 export const DELETE: APIRoute = async ({ request }) => {
   if (!checkAuth(request)) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -308,18 +349,39 @@ export const DELETE: APIRoute = async ({ request }) => {
       });
     }
 
-    // Sicherheitscheck: Verhindere Directory Traversal
     const safeName = path.basename(filename);
 
+    // S3 Modus
+    if (isS3Configured()) {
+      let s3Key: string;
+      if (category && VALID_CATEGORIES.includes(category)) {
+        s3Key = `products/${category}/${safeName}`;
+      } else if (category === 'uploads') {
+        s3Key = `uploads/${safeName}`;
+      } else {
+        return new Response(JSON.stringify({ error: 'Category required for S3 delete' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      await deleteFromS3(s3Key);
+      console.log(`S3 Deleted: ${s3Key}`);
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Lokaler Modus (Fallback)
     let filePath: string | null = null;
 
-    // Bestimme den richtigen Pfad basierend auf der Kategorie
     if (category && VALID_CATEGORIES.includes(category)) {
       filePath = path.join(PRODUCTS_DIR, category, safeName);
     } else if (category === 'uploads') {
       filePath = path.join(UPLOAD_DIR, safeName);
     } else {
-      // Fallback: Suche in allen Kategorien
       for (const cat of VALID_CATEGORIES) {
         const testPath = path.join(PRODUCTS_DIR, cat, safeName);
         if (fs.existsSync(testPath)) {
@@ -327,9 +389,7 @@ export const DELETE: APIRoute = async ({ request }) => {
           break;
         }
       }
-
       if (!filePath) {
-        // Versuche uploads/ Ordner
         const uploadPath = path.join(UPLOAD_DIR, safeName);
         if (fs.existsSync(uploadPath)) {
           filePath = uploadPath;
@@ -337,23 +397,13 @@ export const DELETE: APIRoute = async ({ request }) => {
       }
     }
 
-    // Wenn Datei nicht gefunden wurde
-    if (!filePath) {
+    if (!filePath || !fs.existsSync(filePath)) {
       return new Response(JSON.stringify({ error: 'File not found' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    // Prüfe ob Datei existiert
-    if (!fs.existsSync(filePath)) {
-      return new Response(JSON.stringify({ error: 'File not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Prüfe ob es sich um eine Datei handelt (nicht Verzeichnis)
     const stats = fs.statSync(filePath);
     if (!stats.isFile()) {
       return new Response(JSON.stringify({ error: 'Invalid file' }), {
@@ -362,9 +412,7 @@ export const DELETE: APIRoute = async ({ request }) => {
       });
     }
 
-    // Lösche die Datei
     fs.unlinkSync(filePath);
-
     console.log(`Deleted: ${filePath}`);
 
     return new Response(JSON.stringify({ success: true }), {

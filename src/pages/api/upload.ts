@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import busboy from 'busboy';
 import fs from 'fs';
 import path from 'path';
+import { isS3Configured, uploadToS3, getContentType } from '../../lib/s3-storage';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
@@ -134,12 +135,15 @@ export const POST: APIRoute = async ({ request }) => {
         // Alle Chunks zu einem Buffer zusammenfügen
         const finalBuffer = Buffer.concat(chunks.map(c => c.buffer));
 
-        let filepath: string;
         let resultPath: string;
 
-        // Wenn Kategorie angegeben: in products/[kategorie]/ speichern
-        if (category) {
-          if (!VALID_CATEGORIES.includes(category)) {
+        // S3 Upload wenn konfiguriert
+        if (isS3Configured()) {
+          const s3Key = category
+            ? `products/${category}/${filename}`
+            : `uploads/${filename}`;
+
+          if (category && !VALID_CATEGORIES.includes(category)) {
             resolve(new Response(JSON.stringify({ error: `Invalid category. Must be one of: ${VALID_CATEGORIES.join(', ')}` }), {
               status: 400,
               headers: { 'Content-Type': 'application/json' }
@@ -147,20 +151,35 @@ export const POST: APIRoute = async ({ request }) => {
             return;
           }
 
-          const categoryDir = ensureCategoryDir(category);
-          filepath = path.join(categoryDir, filename);
-          resultPath = `/products/${category}/${filename}`;
-          console.log(`Upload complete: ${filename} → ${category}/ (${finalBuffer.length} bytes, ${chunks.length} chunks)`);
+          const contentType = getContentType(filename);
+          resultPath = await uploadToS3(finalBuffer, s3Key, contentType);
+          console.log(`S3 Upload complete: ${filename} → ${s3Key} (${finalBuffer.length} bytes)`);
         } else {
-          // Ohne Kategorie: in uploads/ speichern
-          ensureUploadDir();
-          filepath = path.join(UPLOAD_DIR, filename);
-          resultPath = `/uploads/${filename}`;
-          console.log(`Upload complete: ${filename} → uploads/ (${finalBuffer.length} bytes, ${chunks.length} chunks)`);
-        }
+          // Lokaler Upload (Fallback)
+          let filepath: string;
 
-        // Datei speichern
-        fs.writeFileSync(filepath, finalBuffer);
+          if (category) {
+            if (!VALID_CATEGORIES.includes(category)) {
+              resolve(new Response(JSON.stringify({ error: `Invalid category. Must be one of: ${VALID_CATEGORIES.join(', ')}` }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' }
+              }));
+              return;
+            }
+
+            const categoryDir = ensureCategoryDir(category);
+            filepath = path.join(categoryDir, filename);
+            resultPath = `/products/${category}/${filename}`;
+            console.log(`Upload complete: ${filename} → ${category}/ (${finalBuffer.length} bytes, ${chunks.length} chunks)`);
+          } else {
+            ensureUploadDir();
+            filepath = path.join(UPLOAD_DIR, filename);
+            resultPath = `/uploads/${filename}`;
+            console.log(`Upload complete: ${filename} → uploads/ (${finalBuffer.length} bytes, ${chunks.length} chunks)`);
+          }
+
+          fs.writeFileSync(filepath, finalBuffer);
+        }
 
         resolve(new Response(JSON.stringify({
           success: true,
