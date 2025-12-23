@@ -14,7 +14,7 @@ services:
         - "traefik.http.routers.keramik-auszeit-de.rule=Host(`<domain>`)"
         - "traefik.http.routers.keramik-auszeit-de.entrypoints=websecure"
         - "traefik.http.routers.keramik-auszeit-de.tls.certresolver=myresolver"
-        - "traefik.http.services.keramik-auszeit-de.loadbalancer.server.port=4321"
+        - "traefik.http.services.keramik-auszeit-de.loadbalancer.server.port=3000"
 networks:
   public-ingress:
     external: true
