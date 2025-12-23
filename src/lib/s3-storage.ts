@@ -13,8 +13,20 @@ const s3Client = new S3Client({
 
 const BUCKET = process.env.S3_BUCKET || import.meta.env.S3_BUCKET || '';
 
+// Projekt-Präfix in S3 (alle Dateien unter diesem Ordner)
+const S3_PROJECT_PREFIX = process.env.S3_PREFIX || import.meta.env.S3_PREFIX || 'Auszeit/';
+
 // JSON-Dateien Pfade in S3
-const S3_DATA_PREFIX = 'data/';
+const S3_DATA_PREFIX = `${S3_PROJECT_PREFIX}data/`;
+
+// S3-Key mit Projekt-Präfix erstellen
+export function getS3Key(path: string): string {
+  // Wenn der Pfad bereits mit dem Präfix beginnt, nicht nochmal hinzufügen
+  if (path.startsWith(S3_PROJECT_PREFIX)) {
+    return path;
+  }
+  return `${S3_PROJECT_PREFIX}${path}`;
+}
 
 // Prüfen ob S3 konfiguriert ist
 export function isS3Configured(): boolean {

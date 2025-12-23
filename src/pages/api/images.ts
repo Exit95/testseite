@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import busboy from 'busboy';
 import fs from 'fs';
 import path from 'path';
-import { isS3Configured, uploadToS3, deleteFromS3, listS3Objects, getContentType } from '../../lib/s3-storage';
+import { isS3Configured, uploadToS3, deleteFromS3, listS3Objects, getContentType, getS3Key } from '../../lib/s3-storage';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
@@ -60,7 +60,7 @@ export const GET: APIRoute = async ({ request }) => {
     if (isS3Configured()) {
       // Bilder aus S3 laden
       for (const category of VALID_CATEGORIES) {
-        const s3Objects = await listS3Objects(`products/${category}/`);
+        const s3Objects = await listS3Objects(getS3Key(`products/${category}/`));
         const categoryImages = s3Objects
           .filter(obj => {
             const ext = obj.key.split('.').pop()?.toLowerCase();
@@ -78,7 +78,7 @@ export const GET: APIRoute = async ({ request }) => {
       }
 
       // Uploads aus S3
-      const uploadObjects = await listS3Objects('uploads/');
+      const uploadObjects = await listS3Objects(getS3Key('uploads/'));
       const uploadImages = uploadObjects
         .filter(obj => {
           const ext = obj.key.split('.').pop()?.toLowerCase();
@@ -269,7 +269,7 @@ export const POST: APIRoute = async ({ request }) => {
 
         // S3 Upload wenn konfiguriert
         if (isS3Configured()) {
-          const s3Key = `products/${category}/${filename}`;
+          const s3Key = getS3Key(`products/${category}/${filename}`);
           const contentTypeHeader = getContentType(filename);
           resultPath = await uploadToS3(finalBuffer, s3Key, contentTypeHeader);
           console.log(`S3 Upload complete: ${filename} → ${s3Key} (${finalBuffer.length} bytes)`);
@@ -355,9 +355,9 @@ export const DELETE: APIRoute = async ({ request }) => {
     if (isS3Configured()) {
       let s3Key: string;
       if (category && VALID_CATEGORIES.includes(category)) {
-        s3Key = `products/${category}/${safeName}`;
+        s3Key = getS3Key(`products/${category}/${safeName}`);
       } else if (category === 'uploads') {
-        s3Key = `uploads/${safeName}`;
+        s3Key = getS3Key(`uploads/${safeName}`);
       } else {
         return new Response(JSON.stringify({ error: 'Category required for S3 delete' }), {
           status: 400,

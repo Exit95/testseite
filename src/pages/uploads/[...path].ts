@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import fs from 'fs';
 import path from 'path';
-import { isS3Configured, getImageFromS3 } from '../../lib/s3-storage';
+import { isS3Configured, getImageFromS3, getS3Key } from '../../lib/s3-storage';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 
@@ -25,7 +25,7 @@ export const GET: APIRoute = async ({ params }) => {
 
     // S3-Modus
     if (isS3Configured()) {
-      const s3Key = `uploads/${safePath}`;
+      const s3Key = getS3Key(`uploads/${safePath}`);
       const imageBuffer = await getImageFromS3(s3Key);
 
       if (!imageBuffer) {

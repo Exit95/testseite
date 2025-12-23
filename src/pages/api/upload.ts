@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import busboy from 'busboy';
 import fs from 'fs';
 import path from 'path';
-import { isS3Configured, uploadToS3, getContentType } from '../../lib/s3-storage';
+import { isS3Configured, uploadToS3, getContentType, getS3Key } from '../../lib/s3-storage';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
@@ -139,9 +139,9 @@ export const POST: APIRoute = async ({ request }) => {
 
         // S3 Upload wenn konfiguriert
         if (isS3Configured()) {
-          const s3Key = category
+          const s3Key = getS3Key(category
             ? `products/${category}/${filename}`
-            : `uploads/${filename}`;
+            : `uploads/${filename}`);
 
           if (category && !VALID_CATEGORIES.includes(category)) {
             resolve(new Response(JSON.stringify({ error: `Invalid category. Must be one of: ${VALID_CATEGORIES.join(', ')}` }), {

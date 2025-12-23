@@ -28,3 +28,9 @@ data/
 
 # jetbrains setting folder
 .idea/
+
+# Temporäre Server-Daten
+server-data/
+server-uploads/
+upload-server-data.ts
+upload-server-images.ts
