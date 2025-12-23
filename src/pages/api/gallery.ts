@@ -45,36 +45,80 @@ function checkAuth(request: Request): boolean {
   return username === 'admin' && password === adminPassword;
 }
 
-// GET - Liste aller Bilder
-export const GET: APIRoute = async ({ request }) => {
+// Kategorien und ihre Pfade im products-Ordner
+const PRODUCT_CATEGORIES = [
+  { id: 'tassen', path: 'Auszeit/products/tassen' },
+  { id: 'teller', path: 'Auszeit/products/teller' },
+  { id: 'spardosen', path: 'Auszeit/products/spardosen' },
+  { id: 'anhaenger', path: 'Auszeit/products/weihnachtsanhaenger' },
+];
+
+// GET - Liste aller Bilder (aus gallery/ UND products/)
+export const GET: APIRoute = async () => {
   try {
-    const response = await getS3Client().send(
+    const endpoint = process.env.S3_ENDPOINT || '';
+    const bucket = getBucket();
+    const allImages: Array<{
+      filename: string;
+      url: string;
+      size: number;
+      date: Date;
+      source: 'gallery' | 'products';
+      category?: string;
+    }> = [];
+
+    // 1. Bilder aus gallery/ laden
+    const galleryResponse = await getS3Client().send(
       new ListObjectsV2Command({
-        Bucket: getBucket(),
+        Bucket: bucket,
         Prefix: `${PREFIX}/`,
       })
     );
 
-    if (!response.Contents) {
-      return new Response(JSON.stringify([]), {
-        headers: { 'Content-Type': 'application/json' },
-      });
+    if (galleryResponse.Contents) {
+      for (const obj of galleryResponse.Contents) {
+        if (obj.Key && !obj.Key.endsWith('/')) {
+          allImages.push({
+            filename: obj.Key.replace(`${PREFIX}/`, ''),
+            url: `${endpoint}/${bucket}/${obj.Key}`,
+            size: obj.Size || 0,
+            date: obj.LastModified || new Date(),
+            source: 'gallery',
+          });
+        }
+      }
     }
 
-    const endpoint = process.env.S3_ENDPOINT || '';
-    const bucket = getBucket();
+    // 2. Bilder aus products/ laden (mit Kategorie-Mapping)
+    for (const cat of PRODUCT_CATEGORIES) {
+      const productsResponse = await getS3Client().send(
+        new ListObjectsV2Command({
+          Bucket: bucket,
+          Prefix: `${cat.path}/`,
+        })
+      );
 
-    const images = response.Contents
-      .filter((obj) => obj.Key && !obj.Key.endsWith('/'))
-      .map((obj) => ({
-        filename: obj.Key!.replace(`${PREFIX}/`, ''),
-        url: `${endpoint}/${bucket}/${obj.Key}`,
-        size: obj.Size || 0,
-        date: obj.LastModified || new Date(),
-      }))
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      if (productsResponse.Contents) {
+        for (const obj of productsResponse.Contents) {
+          if (obj.Key && !obj.Key.endsWith('/') && /\.(jpg|jpeg|png|gif|webp)$/i.test(obj.Key)) {
+            const filename = obj.Key.split('/').pop() || '';
+            allImages.push({
+              filename: `products/${cat.id}/${filename}`,
+              url: `${endpoint}/${bucket}/${obj.Key}`,
+              size: obj.Size || 0,
+              date: obj.LastModified || new Date(),
+              source: 'products',
+              category: cat.id,
+            });
+          }
+        }
+      }
+    }
 
-    return new Response(JSON.stringify(images), {
+    // Nach Datum sortieren
+    allImages.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    return new Response(JSON.stringify(allImages), {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
