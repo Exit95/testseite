@@ -1,63 +1,44 @@
 ---
 import { content } from '../data/content';
 import ProductModal from '../components/ProductModal.astro';
-import {
-  S3Client,
-  ListObjectsV2Command,
-  GetObjectCommand,
-} from '@aws-sdk/client-s3';
+import fs from 'fs';
+import path from 'path';
+import { isS3Configured, listS3Objects, getS3Key, readJsonFromS3 } from '../lib/s3-storage';
 
-// Kategorie-Mapping für Produkte
-const categoryMapping: Record<string, { id: string; mainImage: string }> = {
-  'Tassen': { id: 'tassen', mainImage: '/becher.jpeg' },
-  'Teller': { id: 'teller', mainImage: '/teller.jpeg' },
-  'Spardosen & Krüge & Boxen': { id: 'spardosen', mainImage: '/spardose.jpeg' },
-  'Weihnachtsanhänger': { id: 'anhaenger', mainImage: '/anhänger.png' },
+// Kategorie-Mapping für Produkte (für neues Galerie-System)
+const categoryMapping: Record<string, { id: string; folder: string; mainImage: string }> = {
+  'Tassen': { id: 'tassen', folder: 'tassen', mainImage: '/becher.jpeg' },
+  'Teller': { id: 'teller', folder: 'teller', mainImage: '/teller.jpeg' },
+  'Spardosen & Krüge & Boxen': { id: 'spardosen', folder: 'spardosen', mainImage: '/spardose.jpeg' },
+  'Weihnachtsanhänger': { id: 'anhaenger', folder: 'anhaenger', mainImage: '/anhänger.png' },
 };
 
-// S3 Client
-const s3Client = new S3Client({
-  endpoint: process.env.S3_ENDPOINT || 'https://nbg1.your-objectstorage.com',
-  region: process.env.S3_REGION || 'eu-central',
-  credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY || '',
-    secretAccessKey: process.env.S3_SECRET_KEY || '',
-  },
-  forcePathStyle: true,
-});
-
-const bucket = process.env.S3_BUCKET || 'danapfel-digital';
-const PREFIX = 'Auszeit/gallery';
-const METADATA_KEY = 'Auszeit/data/gallery-metadata.json';
-
-// Metadaten laden
+// Metadaten laden aus S3
 async function loadGalleryMetadata(): Promise<Record<string, { category: string | null }>> {
   try {
-    const response = await s3Client.send(
-      new GetObjectCommand({ Bucket: bucket, Key: METADATA_KEY })
-    );
-    const body = await response.Body?.transformToString();
-    return body ? JSON.parse(body) : {};
+    return await readJsonFromS3('gallery-metadata.json', {});
   } catch {
     return {};
   }
 }
 
-// Bilder aus S3 laden
+// Bilder aus dem neuen gallery/ Ordner laden
 async function loadGalleryImages(): Promise<{ filename: string; url: string }[]> {
   try {
-    const response = await s3Client.send(
-      new ListObjectsV2Command({ Bucket: bucket, Prefix: `${PREFIX}/` })
-    );
+    const s3Key = getS3Key('gallery/');
+    const s3Objects = await listS3Objects(s3Key);
 
-    if (!response.Contents) return [];
+    const endpoint = process.env.S3_ENDPOINT || import.meta.env.S3_ENDPOINT || '';
+    const bucket = process.env.S3_BUCKET || import.meta.env.S3_BUCKET || '';
 
-    const endpoint = process.env.S3_ENDPOINT || '';
-    return response.Contents
-      .filter((obj) => obj.Key && !obj.Key.endsWith('/'))
-      .map((obj) => ({
-        filename: obj.Key!.replace(`${PREFIX}/`, ''),
-        url: `${endpoint}/${bucket}/${obj.Key}`,
+    return s3Objects
+      .filter(obj => {
+        const ext = obj.key.split('.').pop()?.toLowerCase();
+        return ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext || '');
+      })
+      .map(obj => ({
+        filename: obj.key.split('/').pop() || '',
+        url: `${endpoint}/${bucket}/${obj.key}`,
       }));
   } catch (error) {
     console.warn('Konnte Galerie-Bilder nicht laden:', error);
@@ -65,30 +46,110 @@ async function loadGalleryImages(): Promise<{ filename: string; url: string }[]>
   }
 }
 
-// Produktgalerien laden
+// Funktion zum Laden der Bilder aus S3 (alte Methode - products/tassen etc.)
+async function getImagesFromS3(category: string): Promise<string[]> {
+  const config = categoryMapping[category];
+  if (!config) return [];
+
+  const images: string[] = [config.mainImage];
+
+  try {
+    const s3Key = getS3Key(`products/${config.folder}/`);
+    const s3Objects = await listS3Objects(s3Key);
+
+    const imageFiles = s3Objects
+      .filter(obj => {
+        const ext = obj.key.split('.').pop()?.toLowerCase();
+        return ['jpg', 'jpeg', 'png', 'webp'].includes(ext || '');
+      })
+      .sort((a, b) => a.key.localeCompare(b.key))
+      .map(obj => {
+        const filename = obj.key.split('/').pop() || '';
+        return `/products/${config.folder}/${filename}`;
+      });
+
+    images.push(...imageFiles);
+  } catch (error) {
+    console.warn(`Konnte S3-Ordner für ${category} nicht lesen:`, error);
+  }
+
+  return images;
+}
+
+// Funktion zum Laden der Bilder aus dem lokalen Ordner (Fallback)
+function getImagesFromFolder(folderPath: string, mainImage: string): string[] {
+  const publicDir = path.join(process.cwd(), 'public');
+  const distClientDir = path.join(process.cwd(), 'dist', 'client');
+
+  let fullPath = path.join(publicDir, folderPath);
+  if (!fs.existsSync(fullPath)) {
+    fullPath = path.join(distClientDir, folderPath);
+  }
+
+  const images = [mainImage];
+
+  try {
+    if (fs.existsSync(fullPath)) {
+      const files = fs.readdirSync(fullPath);
+      const imageFiles = files
+        .filter(file => /\.(jpeg|jpg|png|webp)$/i.test(file))
+        .sort()
+        .map(file => `/${folderPath}/${file}`);
+
+      images.push(...imageFiles);
+    }
+  } catch (error) {
+    console.warn(`Konnte Ordner ${folderPath} nicht lesen:`, error);
+  }
+
+  return images;
+}
+
+// Produktgalerien laden - kombiniert altes und neues System
 let productGalleries: Record<string, string[]> = {};
 
-try {
-  const [images, metadata] = await Promise.all([
-    loadGalleryImages(),
-    loadGalleryMetadata(),
-  ]);
+if (isS3Configured()) {
+  // Lade aus dem alten products/ Ordner (bestehende Bilder)
+  const categories = Object.keys(categoryMapping);
+  const oldResults = await Promise.all(
+    categories.map(async (category) => ({
+      category,
+      images: await getImagesFromS3(category)
+    }))
+  );
 
-  // Bilder nach Kategorie gruppieren
-  for (const [productName, config] of Object.entries(categoryMapping)) {
-    const categoryImages = images
-      .filter((img) => metadata[img.filename]?.category === config.id)
-      .map((img) => img.url);
+  for (const result of oldResults) {
+    productGalleries[result.category] = result.images;
+  }
 
-    // Hauptbild zuerst, dann die S3-Bilder
-    productGalleries[productName] = [config.mainImage, ...categoryImages];
+  // Zusätzlich: Lade aus dem neuen gallery/ Ordner mit Metadaten
+  try {
+    const [galleryImages, metadata] = await Promise.all([
+      loadGalleryImages(),
+      loadGalleryMetadata(),
+    ]);
+
+    // Füge Bilder aus dem neuen System hinzu
+    for (const [productName, config] of Object.entries(categoryMapping)) {
+      const newImages = galleryImages
+        .filter((img) => metadata[img.filename]?.category === config.id)
+        .map((img) => img.url);
+
+      if (newImages.length > 0) {
+        productGalleries[productName] = [...(productGalleries[productName] || [config.mainImage]), ...newImages];
+      }
+    }
+  } catch (error) {
+    console.warn('Fehler beim Laden der neuen Galerie-Daten:', error);
   }
-} catch (error) {
-  console.warn('Fehler beim Laden der Galerie-Daten:', error);
-  // Fallback: Nur Hauptbilder
-  for (const [productName, config] of Object.entries(categoryMapping)) {
-    productGalleries[productName] = [config.mainImage];
-  }
+} else {
+  // Lokaler Modus: Lade Bilder aus dem Dateisystem
+  productGalleries = {
+    'Tassen': getImagesFromFolder('products/tassen', '/becher.jpeg'),
+    'Teller': getImagesFromFolder('products/teller', '/teller.jpeg'),
+    'Spardosen & Krüge & Boxen': getImagesFromFolder('products/spardosen', '/spardose.jpeg'),
+    'Weihnachtsanhänger': getImagesFromFolder('products/anhaenger', '/anhänger.png'),
+  };
 }
 ---
 
