@@ -2,19 +2,10 @@ import type { APIRoute } from 'astro';
 import fs from 'fs';
 import path from 'path';
 import nodemailer from 'nodemailer';
+import { isS3Configured, readJsonFromS3, writeJsonToS3 } from '../../lib/s3-storage';
 
 const REVIEWS_FILE = path.join(process.cwd(), 'data', 'reviews.json');
-
-// Sicherstellen, dass das data-Verzeichnis existiert
-function ensureDataDir() {
-  const dataDir = path.dirname(REVIEWS_FILE);
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
-  if (!fs.existsSync(REVIEWS_FILE)) {
-    fs.writeFileSync(REVIEWS_FILE, JSON.stringify([], null, 2));
-  }
-}
+const REVIEWS_FILENAME = 'reviews.json';
 
 interface Review {
   id: string;
@@ -25,15 +16,43 @@ interface Review {
   approved: boolean;
 }
 
+// Bewertungen lesen (S3 oder lokal)
+async function getReviews(): Promise<Review[]> {
+  if (isS3Configured()) {
+    return await readJsonFromS3<Review[]>(REVIEWS_FILENAME, []);
+  }
+  // Lokaler Fallback
+  const dataDir = path.dirname(REVIEWS_FILE);
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+  if (!fs.existsSync(REVIEWS_FILE)) {
+    return [];
+  }
+  return JSON.parse(fs.readFileSync(REVIEWS_FILE, 'utf-8'));
+}
+
+// Bewertungen speichern (S3 oder lokal)
+async function saveReviews(reviews: Review[]): Promise<void> {
+  if (isS3Configured()) {
+    await writeJsonToS3(REVIEWS_FILENAME, reviews);
+    return;
+  }
+  // Lokaler Fallback
+  const dataDir = path.dirname(REVIEWS_FILE);
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+  fs.writeFileSync(REVIEWS_FILE, JSON.stringify(reviews, null, 2));
+}
+
 // GET - Alle Bewertungen abrufen (für Admin) oder nur freigegebene (für Webseite)
 export const GET: APIRoute = async ({ request, url }) => {
-  ensureDataDir();
-  
   const showAll = url.searchParams.get('all') === 'true';
   const authHeader = request.headers.get('Authorization');
-  
+
   try {
-    const reviews: Review[] = JSON.parse(fs.readFileSync(REVIEWS_FILE, 'utf-8'));
+    const reviews = await getReviews();
     
     // Wenn showAll=true, prüfe Admin-Authentifizierung
     if (showAll) {
@@ -79,8 +98,6 @@ export const GET: APIRoute = async ({ request, url }) => {
 
 // POST - Neue Bewertung erstellen
 export const POST: APIRoute = async ({ request }) => {
-  ensureDataDir();
-  
   try {
     const body = await request.json();
     const { name, rating, comment } = body;
@@ -264,8 +281,6 @@ Feldstiege 6a, 48599 Gronau
 
 // PATCH - Bewertung freigeben/ablehnen
 export const PATCH: APIRoute = async ({ request }) => {
-  ensureDataDir();
-  
   const authHeader = request.headers.get('Authorization');
   if (!authHeader) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -317,8 +332,6 @@ export const PATCH: APIRoute = async ({ request }) => {
 
 // DELETE - Bewertung löschen
 export const DELETE: APIRoute = async ({ request, url }) => {
-  ensureDataDir();
-  
   const authHeader = request.headers.get('Authorization');
   if (!authHeader) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -326,18 +339,18 @@ export const DELETE: APIRoute = async ({ request, url }) => {
       headers: { 'Content-Type': 'application/json' }
     });
   }
-  
+
   const base64Credentials = authHeader.split(' ')[1];
   const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
   const [username, password] = credentials.split(':');
-  
+
   if (username !== 'admin' || password !== import.meta.env.ADMIN_PASSWORD) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' }
     });
   }
-  
+
   try {
     const id = url.searchParams.get('id');
     if (!id) {
@@ -346,19 +359,19 @@ export const DELETE: APIRoute = async ({ request, url }) => {
         headers: { 'Content-Type': 'application/json' }
       });
     }
-    
-    const reviews: Review[] = JSON.parse(fs.readFileSync(REVIEWS_FILE, 'utf-8'));
+
+    const reviews = await getReviews();
     const filteredReviews = reviews.filter(r => r.id !== id);
-    
+
     if (filteredReviews.length === reviews.length) {
       return new Response(JSON.stringify({ error: 'Bewertung nicht gefunden' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' }
       });
     }
-    
-    fs.writeFileSync(REVIEWS_FILE, JSON.stringify(filteredReviews, null, 2));
-    
+
+    await saveReviews(filteredReviews);
+
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }

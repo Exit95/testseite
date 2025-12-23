@@ -1,12 +1,22 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { isS3Configured, readJsonFromS3, writeJsonToS3 } from './s3-storage';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
-const SLOTS_FILE = path.join(DATA_DIR, 'time-slots.json');
-const BOOKINGS_FILE = path.join(DATA_DIR, 'bookings.json');
-const WORKSHOPS_FILE = path.join(DATA_DIR, 'workshops.json');
-const CATEGORIES_FILE = path.join(DATA_DIR, 'gallery-categories.json');
-const IMAGE_METADATA_FILE = path.join(DATA_DIR, 'image-metadata.json');
+
+// Dateinamen für S3 und lokales Dateisystem
+const SLOTS_FILENAME = 'time-slots.json';
+const BOOKINGS_FILENAME = 'bookings.json';
+const WORKSHOPS_FILENAME = 'workshops.json';
+const CATEGORIES_FILENAME = 'gallery-categories.json';
+const IMAGE_METADATA_FILENAME = 'image-metadata.json';
+
+// Lokale Pfade (Fallback)
+const SLOTS_FILE = path.join(DATA_DIR, SLOTS_FILENAME);
+const BOOKINGS_FILE = path.join(DATA_DIR, BOOKINGS_FILENAME);
+const WORKSHOPS_FILE = path.join(DATA_DIR, WORKSHOPS_FILENAME);
+const CATEGORIES_FILE = path.join(DATA_DIR, CATEGORIES_FILENAME);
+const IMAGE_METADATA_FILE = path.join(DATA_DIR, IMAGE_METADATA_FILENAME);
 
 // Event-Typen für Termine
 export type EventType = 'normal' | 'kindergeburtstag' | 'stammtisch';
@@ -82,6 +92,9 @@ async function ensureFile(filePath: string, defaultData: any) {
 
 // Time Slots
 export async function getTimeSlots(): Promise<TimeSlot[]> {
+  if (isS3Configured()) {
+    return await readJsonFromS3<TimeSlot[]>(SLOTS_FILENAME, []);
+  }
   await ensureDataDir();
   await ensureFile(SLOTS_FILE, []);
   const data = await fs.readFile(SLOTS_FILE, 'utf-8');
@@ -89,6 +102,10 @@ export async function getTimeSlots(): Promise<TimeSlot[]> {
 }
 
 export async function saveTimeSlots(slots: TimeSlot[]): Promise<void> {
+  if (isS3Configured()) {
+    await writeJsonToS3(SLOTS_FILENAME, slots);
+    return;
+  }
   await ensureDataDir();
   await fs.writeFile(SLOTS_FILE, JSON.stringify(slots, null, 2));
 }
@@ -124,6 +141,9 @@ export async function updateTimeSlot(id: string, updates: Partial<TimeSlot>): Pr
 
 // Bookings
 export async function getBookings(): Promise<Booking[]> {
+  if (isS3Configured()) {
+    return await readJsonFromS3<Booking[]>(BOOKINGS_FILENAME, []);
+  }
   await ensureDataDir();
   await ensureFile(BOOKINGS_FILE, []);
   const data = await fs.readFile(BOOKINGS_FILE, 'utf-8');
@@ -131,6 +151,10 @@ export async function getBookings(): Promise<Booking[]> {
 }
 
 export async function saveBookings(bookings: Booking[]): Promise<void> {
+  if (isS3Configured()) {
+    await writeJsonToS3(BOOKINGS_FILENAME, bookings);
+    return;
+  }
   await ensureDataDir();
   await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookings, null, 2));
 }
@@ -241,6 +265,9 @@ export async function cancelBooking(id: string): Promise<boolean> {
 
 // Workshops
 export async function getWorkshops(): Promise<Workshop[]> {
+  if (isS3Configured()) {
+    return await readJsonFromS3<Workshop[]>(WORKSHOPS_FILENAME, []);
+  }
   await ensureDataDir();
   await ensureFile(WORKSHOPS_FILE, []);
   const data = await fs.readFile(WORKSHOPS_FILE, 'utf-8');
@@ -248,6 +275,10 @@ export async function getWorkshops(): Promise<Workshop[]> {
 }
 
 export async function saveWorkshops(workshops: Workshop[]): Promise<void> {
+  if (isS3Configured()) {
+    await writeJsonToS3(WORKSHOPS_FILENAME, workshops);
+    return;
+  }
   await ensureDataDir();
   await fs.writeFile(WORKSHOPS_FILE, JSON.stringify(workshops, null, 2));
 }
@@ -289,6 +320,9 @@ export async function deleteWorkshop(id: string): Promise<boolean> {
 
 // Gallery Categories
 export async function getCategories(): Promise<GalleryCategory[]> {
+  if (isS3Configured()) {
+    return await readJsonFromS3<GalleryCategory[]>(CATEGORIES_FILENAME, []);
+  }
   await ensureDataDir();
   await ensureFile(CATEGORIES_FILE, []);
   const data = await fs.readFile(CATEGORIES_FILE, 'utf-8');
@@ -296,6 +330,10 @@ export async function getCategories(): Promise<GalleryCategory[]> {
 }
 
 export async function saveCategories(categories: GalleryCategory[]): Promise<void> {
+  if (isS3Configured()) {
+    await writeJsonToS3(CATEGORIES_FILENAME, categories);
+    return;
+  }
   await ensureDataDir();
   await fs.writeFile(CATEGORIES_FILE, JSON.stringify(categories, null, 2));
 }
@@ -353,6 +391,9 @@ export async function deleteCategory(id: string): Promise<boolean> {
 
 // Image Metadata
 export async function getImageMetadata(): Promise<ImageMetadata[]> {
+  if (isS3Configured()) {
+    return await readJsonFromS3<ImageMetadata[]>(IMAGE_METADATA_FILENAME, []);
+  }
   await ensureDataDir();
   await ensureFile(IMAGE_METADATA_FILE, []);
   const data = await fs.readFile(IMAGE_METADATA_FILE, 'utf-8');
@@ -360,6 +401,10 @@ export async function getImageMetadata(): Promise<ImageMetadata[]> {
 }
 
 export async function saveImageMetadata(metadata: ImageMetadata[]): Promise<void> {
+  if (isS3Configured()) {
+    await writeJsonToS3(IMAGE_METADATA_FILENAME, metadata);
+    return;
+  }
   await ensureDataDir();
   await fs.writeFile(IMAGE_METADATA_FILE, JSON.stringify(metadata, null, 2));
 }

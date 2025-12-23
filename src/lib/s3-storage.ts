@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command, GetObjectCommand } from '@aws-sdk/client-s3';
 
 // Hetzner Object Storage Konfiguration
 const s3Client = new S3Client({
@@ -12,6 +12,9 @@ const s3Client = new S3Client({
 });
 
 const BUCKET = process.env.S3_BUCKET || import.meta.env.S3_BUCKET || '';
+
+// JSON-Dateien Pfade in S3
+const S3_DATA_PREFIX = 'data/';
 
 // Prüfen ob S3 konfiguriert ist
 export function isS3Configured(): boolean {
@@ -88,5 +91,52 @@ export function getContentType(filename: string): string {
     svg: 'image/svg+xml',
   };
   return types[ext || ''] || 'application/octet-stream';
+}
+
+// ============== JSON DATA STORAGE IN S3 ==============
+
+// JSON-Daten aus S3 lesen
+export async function readJsonFromS3<T>(filename: string, defaultValue: T): Promise<T> {
+  if (!isS3Configured()) {
+    throw new Error('S3 not configured');
+  }
+
+  try {
+    const command = new GetObjectCommand({
+      Bucket: BUCKET,
+      Key: `${S3_DATA_PREFIX}${filename}`,
+    });
+
+    const response = await s3Client.send(command);
+    const bodyString = await response.Body?.transformToString();
+
+    if (!bodyString) {
+      return defaultValue;
+    }
+
+    return JSON.parse(bodyString) as T;
+  } catch (error: any) {
+    // Datei existiert nicht - Default zurückgeben
+    if (error.name === 'NoSuchKey' || error.$metadata?.httpStatusCode === 404) {
+      return defaultValue;
+    }
+    throw error;
+  }
+}
+
+// JSON-Daten in S3 speichern
+export async function writeJsonToS3<T>(filename: string, data: T): Promise<void> {
+  if (!isS3Configured()) {
+    throw new Error('S3 not configured');
+  }
+
+  const command = new PutObjectCommand({
+    Bucket: BUCKET,
+    Key: `${S3_DATA_PREFIX}${filename}`,
+    Body: JSON.stringify(data, null, 2),
+    ContentType: 'application/json',
+  });
+
+  await s3Client.send(command);
 }
 

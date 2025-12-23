@@ -2,9 +2,11 @@ import type { APIRoute } from 'astro';
 import fs from 'fs/promises';
 import path from 'path';
 import nodemailer from 'nodemailer';
+import { isS3Configured, readJsonFromS3, writeJsonToS3 } from '../../../lib/s3-storage';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const WORKSHOP_BOOKINGS_FILE = path.join(DATA_DIR, 'workshop-bookings.json');
+const WORKSHOP_BOOKINGS_FILENAME = 'workshop-bookings.json';
 
 interface WorkshopBooking {
   id: string;
@@ -18,7 +20,7 @@ interface WorkshopBooking {
   status: 'pending' | 'confirmed' | 'cancelled';
 }
 
-// Sicherstellen, dass das Data-Verzeichnis existiert
+// Sicherstellen, dass das Data-Verzeichnis existiert (nur für lokalen Fallback)
 async function ensureDataDir() {
   try {
     await fs.access(DATA_DIR);
@@ -27,7 +29,7 @@ async function ensureDataDir() {
   }
 }
 
-// Sicherstellen, dass die Datei existiert
+// Sicherstellen, dass die Datei existiert (nur für lokalen Fallback)
 async function ensureFile(filePath: string, defaultData: any) {
   try {
     await fs.access(filePath);
@@ -37,6 +39,9 @@ async function ensureFile(filePath: string, defaultData: any) {
 }
 
 async function getWorkshopBookings(): Promise<WorkshopBooking[]> {
+  if (isS3Configured()) {
+    return await readJsonFromS3<WorkshopBooking[]>(WORKSHOP_BOOKINGS_FILENAME, []);
+  }
   await ensureDataDir();
   await ensureFile(WORKSHOP_BOOKINGS_FILE, []);
   const data = await fs.readFile(WORKSHOP_BOOKINGS_FILE, 'utf-8');
@@ -44,6 +49,10 @@ async function getWorkshopBookings(): Promise<WorkshopBooking[]> {
 }
 
 async function saveWorkshopBookings(bookings: WorkshopBooking[]): Promise<void> {
+  if (isS3Configured()) {
+    await writeJsonToS3(WORKSHOP_BOOKINGS_FILENAME, bookings);
+    return;
+  }
   await ensureDataDir();
   await fs.writeFile(WORKSHOP_BOOKINGS_FILE, JSON.stringify(bookings, null, 2));
 }
@@ -78,11 +87,16 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    // Workshop laden
-    const workshopsFile = path.join(DATA_DIR, 'workshops.json');
-    await ensureFile(workshopsFile, []);
-    const workshopsData = await fs.readFile(workshopsFile, 'utf-8');
-    const workshops = JSON.parse(workshopsData);
+    // Workshop laden (aus S3 oder lokal)
+    let workshops: any[];
+    if (isS3Configured()) {
+      workshops = await readJsonFromS3<any[]>('workshops.json', []);
+    } else {
+      const workshopsFile = path.join(DATA_DIR, 'workshops.json');
+      await ensureFile(workshopsFile, []);
+      const workshopsData = await fs.readFile(workshopsFile, 'utf-8');
+      workshops = JSON.parse(workshopsData);
+    }
     
     const workshop = workshops.find((w: any) => w.id === workshopId);
     

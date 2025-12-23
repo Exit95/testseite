@@ -105,12 +105,55 @@ async function migrateDirectory(localDir: string, s3Prefix: string): Promise<num
   return uploaded;
 }
 
+async function uploadJsonFile(localPath: string, s3Key: string): Promise<boolean> {
+  try {
+    if (!fs.existsSync(localPath)) {
+      console.log(`   ⏭️  Datei existiert nicht lokal: ${localPath}`);
+      return false;
+    }
+
+    const fileContent = fs.readFileSync(localPath, 'utf-8');
+
+    await s3Client.send(new PutObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: s3Key,
+      Body: fileContent,
+      ContentType: 'application/json',
+    }));
+
+    console.log(`   ✅ Hochgeladen: ${s3Key}`);
+    return true;
+  } catch (error) {
+    console.error(`   ❌ Fehler bei ${s3Key}:`, error);
+    return false;
+  }
+}
+
 async function main() {
   console.log('🚀 Starte Migration zu Hetzner Object Storage...\n');
   console.log(`   Endpoint: ${S3_ENDPOINT}`);
   console.log(`   Bucket: ${S3_BUCKET}\n`);
 
   let totalUploaded = 0;
+
+  // JSON-Daten migrieren
+  console.log('\n📋 Migriere JSON-Daten...');
+  const jsonFiles = [
+    'time-slots.json',
+    'bookings.json',
+    'workshops.json',
+    'workshop-bookings.json',
+    'reviews.json',
+    'gallery-categories.json',
+    'image-metadata.json',
+  ];
+
+  for (const jsonFile of jsonFiles) {
+    const localPath = path.join(process.cwd(), 'data', jsonFile);
+    if (await uploadJsonFile(localPath, `data/${jsonFile}`)) {
+      totalUploaded++;
+    }
+  }
 
   // Produkt-Bilder migrieren
   const categories = ['tassen', 'teller', 'spardosen', 'anhaenger'];
@@ -132,9 +175,10 @@ async function main() {
   totalUploaded += uploadsCount;
 
   console.log(`\n✅ Migration abgeschlossen! ${totalUploaded} Dateien hochgeladen.`);
-  console.log(`\n📌 Bilder sind jetzt erreichbar unter:`);
-  console.log(`   ${S3_ENDPOINT}/${S3_BUCKET}/products/[kategorie]/[dateiname]`);
-  console.log(`   ${S3_ENDPOINT}/${S3_BUCKET}/uploads/[dateiname]`);
+  console.log(`\n📌 Daten sind jetzt in S3 gespeichert:`);
+  console.log(`   JSON-Daten: ${S3_ENDPOINT}/${S3_BUCKET}/data/[dateiname]`);
+  console.log(`   Bilder: ${S3_ENDPOINT}/${S3_BUCKET}/products/[kategorie]/[dateiname]`);
+  console.log(`   Uploads: ${S3_ENDPOINT}/${S3_BUCKET}/uploads/[dateiname]`);
 }
 
 main().catch(console.error);
