@@ -116,7 +116,8 @@ body {
 /* Sections */
 .add-slot-section,
 .slots-section,
-.bookings-section {
+.bookings-section,
+.workshop-bookings-section {
   background: white;
   padding: 2rem;
   border-radius: 12px;
@@ -125,10 +126,15 @@ body {
 
 .add-slot-section h2,
 .slots-section h2,
-.bookings-section h2 {
+.bookings-section h2,
+.workshop-bookings-section h2 {
   font-size: 1.5rem;
   color: #8B6F47;
   margin-bottom: 1.5rem;
+}
+
+.workshop-bookings-section {
+  margin-top: 2rem;
 }
 
 /* Forms */

@@ -196,6 +196,13 @@ export const prerender = false;
           <div id="workshops-list" class="slots-list hidden"></div>
           <div id="no-workshops-admin" class="no-data hidden">Keine Workshops vorhanden</div>
         </section>
+
+        <section class="workshop-bookings-section">
+          <h2>Workshop-Buchungen</h2>
+          <div id="workshop-bookings-loading" class="loading">Lade Workshop-Buchungen...</div>
+          <div id="workshop-bookings-list" class="bookings-list hidden"></div>
+          <div id="no-workshop-bookings" class="no-data hidden">Keine Workshop-Buchungen vorhanden</div>
+        </section>
       </div>
       <!-- Ende Tab: Workshops -->
 
@@ -959,6 +966,7 @@ export const prerender = false;
           if (tabName === 'workshops') {
             loadWorkshopImageOptions();
             loadWorkshops();
+            loadWorkshopBookings();
           } else if (tabName === 'galerie') {
             loadGalleryData();
           } else if (tabName === 'bewertungen') {
@@ -1245,6 +1253,150 @@ export const prerender = false;
       if (submitBtn) submitBtn.textContent = 'Workshop hinzufügen';
       if (cancelBtn) cancelBtn.classList.add('hidden');
       updateWorkshopImagePreview(null);
+    }
+
+    // ========== WORKSHOP-BUCHUNGEN VERWALTUNG ==========
+    async function loadWorkshopBookings() {
+      const loadingEl = document.getElementById('workshop-bookings-loading');
+      const listEl = document.getElementById('workshop-bookings-list');
+      const noBookingsEl = document.getElementById('no-workshop-bookings');
+
+      if (loadingEl) loadingEl.classList.remove('hidden');
+      if (listEl) listEl.classList.add('hidden');
+      if (noBookingsEl) noBookingsEl.classList.add('hidden');
+
+      try {
+        const response = await fetch('/api/admin/workshop-bookings', {
+          headers: { 'Authorization': `Basic ${authCredentials}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to load workshop bookings');
+
+        const bookings = await response.json();
+
+        if (loadingEl) loadingEl.classList.add('hidden');
+
+        // Nur nicht-stornierte Buchungen anzeigen
+        const activeBookings = bookings.filter((b: any) => b.status !== 'cancelled');
+
+        if (activeBookings.length === 0) {
+          if (noBookingsEl) noBookingsEl.classList.remove('hidden');
+          return;
+        }
+
+        if (listEl) {
+          listEl.innerHTML = activeBookings.map((booking: any) => {
+            const status = booking.status || 'pending';
+            let statusLabel = 'Bestätigt';
+            let statusClass = 'booking-status--confirmed';
+            if (status === 'pending') {
+              statusLabel = 'Neu / unbestätigt';
+              statusClass = 'booking-status--pending';
+            }
+
+            const showConfirm = status === 'pending';
+
+            return `
+              <div class="slot-card booking-card" data-id="${booking.id}">
+                <div class="slot-info booking-info">
+                  <div class="booking-main">
+                    <div>
+                      <div class="slot-date">${booking.workshopTitle || 'Workshop'}</div>
+                      <div class="slot-time">${booking.workshopDate || ''} um ${booking.workshopTime || ''} Uhr</div>
+                    </div>
+                    <div class="booking-status ${statusClass}">${statusLabel}</div>
+                  </div>
+                  <div class="booking-customer">
+                    <div><strong>${booking.name}</strong> (${booking.email})</div>
+                    <div>${booking.participants} Person(en)${booking.phone ? ' | Tel: ' + booking.phone : ''}</div>
+                    ${booking.notes ? `<div style="font-size: 0.85em; color: #666;">Notiz: ${booking.notes}</div>` : ''}
+                  </div>
+                </div>
+                <div class="slot-actions booking-actions">
+                  ${showConfirm ? `<button class="btn btn-success btn-confirm-wb" data-id="${booking.id}">✓ Bestätigen</button>` : ''}
+                  <button class="btn btn-danger btn-cancel-wb" data-id="${booking.id}">✕ Stornieren</button>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          listEl.classList.remove('hidden');
+
+          // Confirm-Handler
+          listEl.querySelectorAll('.btn-confirm-wb').forEach((btn) => {
+            btn.addEventListener('click', async (e) => {
+              const id = (e.target as HTMLElement).dataset.id;
+              if (id && confirm('Workshop-Buchung bestätigen und Bestätigungs-E-Mail an Kunden senden?')) {
+                await confirmWorkshopBooking(id);
+              }
+            });
+          });
+
+          // Cancel-Handler
+          listEl.querySelectorAll('.btn-cancel-wb').forEach((btn) => {
+            btn.addEventListener('click', async (e) => {
+              const id = (e.target as HTMLElement).dataset.id;
+              if (id && confirm('Workshop-Buchung wirklich stornieren?')) {
+                await cancelWorkshopBooking(id);
+              }
+            });
+          });
+        }
+      } catch (error) {
+        console.error('Error loading workshop bookings:', error);
+        if (loadingEl) loadingEl.classList.add('hidden');
+      }
+    }
+
+    async function confirmWorkshopBooking(id: string) {
+      try {
+        const response = await fetch('/api/admin/workshop-bookings', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${authCredentials}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ id, action: 'confirm' }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          if (result.customerEmailSent) {
+            alert('Buchung bestätigt und Bestätigungs-E-Mail an Kunden gesendet!');
+          } else {
+            alert('Buchung bestätigt. E-Mail konnte nicht gesendet werden: ' + (result.emailError || 'Unbekannter Fehler'));
+          }
+          await loadWorkshopBookings();
+        } else {
+          alert('Fehler beim Bestätigen: ' + (result.error || 'Unbekannter Fehler'));
+        }
+      } catch (error) {
+        console.error('Error confirming workshop booking:', error);
+        alert('Fehler beim Bestätigen der Buchung');
+      }
+    }
+
+    async function cancelWorkshopBooking(id: string) {
+      try {
+        const response = await fetch('/api/admin/workshop-bookings', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${authCredentials}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ id, action: 'cancel' }),
+        });
+
+        if (response.ok) {
+          await loadWorkshopBookings();
+        } else {
+          alert('Fehler beim Stornieren der Buchung');
+        }
+      } catch (error) {
+        console.error('Error cancelling workshop booking:', error);
+        alert('Fehler beim Stornieren der Buchung');
+      }
     }
 
     // ========== GALERIE VERWALTUNG (S3) ==========
