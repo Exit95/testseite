@@ -176,11 +176,44 @@ export async function readJsonFromS3<T>(filename: string, defaultValue: T): Prom
   }
 }
 
-// JSON-Daten in S3 speichern
+// Backup vor dem Überschreiben erstellen
+async function createBackupBeforeWrite(filename: string): Promise<void> {
+  try {
+    const bucket = getBucketName();
+    const sourceKey = `${getDataPrefix()}${filename}`;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupKey = `${getDataPrefix()}backups/${filename.replace('.json', '')}_${timestamp}.json`;
+
+    // Prüfen ob Quelldatei existiert
+    const existingData = await readJsonFromS3<unknown>(filename, null);
+    if (existingData === null) {
+      return; // Keine Backup nötig wenn Datei nicht existiert
+    }
+
+    // Backup erstellen
+    const command = new PutObjectCommand({
+      Bucket: bucket,
+      Key: backupKey,
+      Body: JSON.stringify(existingData, null, 2),
+      ContentType: 'application/json',
+    });
+
+    await getS3Client().send(command);
+    console.log(`[S3] Backup erstellt: ${backupKey}`);
+  } catch (error) {
+    console.error(`[S3] Backup-Fehler für ${filename}:`, error);
+    // Backup-Fehler sollten das Schreiben nicht blockieren
+  }
+}
+
+// JSON-Daten in S3 speichern (mit automatischem Backup)
 export async function writeJsonToS3<T>(filename: string, data: T): Promise<void> {
   if (!isS3Configured()) {
     throw new Error('S3 not configured');
   }
+
+  // Backup vor dem Überschreiben erstellen
+  await createBackupBeforeWrite(filename);
 
   const command = new PutObjectCommand({
     Bucket: getBucketName(),
@@ -190,6 +223,55 @@ export async function writeJsonToS3<T>(filename: string, data: T): Promise<void>
   });
 
   await getS3Client().send(command);
+
+  // Alte Backups aufräumen (nur letzte 10 behalten)
+  cleanupOldBackups(filename).catch((err) => {
+    console.error(`[S3] Backup-Cleanup-Fehler für ${filename}:`, err);
+  });
+}
+
+// Alte Backups löschen (nur letzte MAX_BACKUPS behalten)
+const MAX_BACKUPS = 10;
+async function cleanupOldBackups(filename: string): Promise<void> {
+  try {
+    const bucket = getBucketName();
+    const backupPrefix = `${getDataPrefix()}backups/${filename.replace('.json', '')}_`;
+
+    const listCommand = new ListObjectsV2Command({
+      Bucket: bucket,
+      Prefix: backupPrefix,
+    });
+
+    const response = await getS3Client().send(listCommand);
+    const backups = response.Contents || [];
+
+    if (backups.length <= MAX_BACKUPS) {
+      return; // Nichts zu löschen
+    }
+
+    // Nach Datum sortieren (neueste zuerst)
+    backups.sort((a, b) => {
+      const dateA = a.LastModified?.getTime() || 0;
+      const dateB = b.LastModified?.getTime() || 0;
+      return dateB - dateA;
+    });
+
+    // Alte Backups löschen
+    const toDelete = backups.slice(MAX_BACKUPS);
+    for (const backup of toDelete) {
+      if (backup.Key) {
+        const deleteCommand = new DeleteObjectCommand({
+          Bucket: bucket,
+          Key: backup.Key,
+        });
+        await getS3Client().send(deleteCommand);
+        console.log(`[S3] Altes Backup gelöscht: ${backup.Key}`);
+      }
+    }
+  } catch (error) {
+    // Fehler beim Cleanup sind nicht kritisch
+    console.error('[S3] Backup-Cleanup-Fehler:', error);
+  }
 }
 
 // Bild aus S3 lesen
